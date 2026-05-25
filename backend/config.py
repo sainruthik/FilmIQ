@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     openai_worker_model: str = "gpt-4.1-mini"
     openai_strategist_model: str = "gpt-4.1"
 
-    embed_model: str = "BAAI/bge-small-en-v1.5"
-    embed_dim: int = 384
+    embed_model: str = "text-embedding-3-small"
+    embed_dim: int = 1536
 
     upload_dir: Path = Path("uploads")
     max_file_size_mb: int = 50

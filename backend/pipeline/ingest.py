@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient
@@ -10,16 +10,15 @@ from qdrant_client.models import Distance, VectorParams
 
 from config import settings
 
-_embeddings: HuggingFaceEmbeddings | None = None
+_embeddings: OpenAIEmbeddings | None = None
 
 
-def get_embeddings() -> HuggingFaceEmbeddings:
+def get_embeddings() -> OpenAIEmbeddings:
     global _embeddings
     if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(
-            model_name=settings.embed_model,
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True},
+        _embeddings = OpenAIEmbeddings(
+            model=settings.embed_model,
+            openai_api_key=settings.openai_api_key,
         )
     return _embeddings
 
