@@ -1,0 +1,15 @@
+# Environment — never commit real keys
+.env.local
+.env*.local
+.env.production
+
+# Next.js build output
+.next/
+out/
+
+# Dependencies
+node_modules/
+
+# Misc
+.DS_Store
+*.log
