@@ -4,6 +4,8 @@ litellm
 langchain
 langchain-core
 langchain-community
+langchain-classic
+langchain-text-splitters
 
 # ── Vector DB ─────────────────────────────────────────────────────────────────
 qdrant-client>=1.12.0
