@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     qdrant_api_key: str
     qdrant_host: str
 
-    openai_worker_model: str = "gpt-4.1-mini"
-    openai_strategist_model: str = "gpt-4.1"
+    openai_worker_model: str = "gpt-4o-mini"
+    openai_strategist_model: str = "gpt-4o"
 
     embed_model: str = "text-embedding-3-small"
     embed_dim: int = 1536
@@ -26,4 +26,12 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 
-settings = Settings()
+try:
+    settings = Settings()
+    # Validate required settings on startup
+    assert settings.openai_api_key, "Missing OPENAI_API_KEY"
+    assert settings.qdrant_api_key, "Missing QDRANT_API_KEY"
+    assert settings.qdrant_host, "Missing QDRANT_HOST"
+except Exception as e:
+    print(f"Configuration Error: {e}")
+    raise
