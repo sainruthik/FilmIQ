@@ -7,10 +7,13 @@ services:
     dockerfilePath: ./backend/Dockerfile
     port: 10000
     healthCheckPath: /health
+    startupTimeout: 360
     envVars:
       - key: PORT
         value: "10000"
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: HF_HUB_DISABLE_TELEMETRY
         value: "1"

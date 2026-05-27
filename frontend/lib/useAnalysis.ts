@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getAnalysisUrl } from "./api";
+import type { AcquisitionReport } from "./types";
 
 export type AgentStatus = "waiting" | "running" | "done";
 export type Phase = "idle" | "ingest" | "crew" | "complete" | "error";
@@ -11,12 +12,6 @@ export interface AgentInfo {
   status: AgentStatus;
 }
 
-export interface BidRange {
-  low: string | null;
-  fair: string | null;
-  walk_away: string | null;
-}
-
 export interface AnalysisState {
   phase: Phase;
   message: string;
@@ -24,8 +19,8 @@ export interface AnalysisState {
   agents: AgentInfo[];
   currentStep: number;
   totalSteps: number;
-  report: string | null;
-  bidRange: BidRange | null;
+  report: AcquisitionReport | null;
+  reportRaw: string | null;
   error: string | null;
 }
 
@@ -58,7 +53,7 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
     currentStep: 0,
     totalSteps: ALL_AGENT_NAMES.length,
     report: null,
-    bidRange: null,
+    reportRaw: null,
     error: null,
   });
 
@@ -74,13 +69,15 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
           case "status":
             return {
               ...prev,
-              phase: (data.phase === "ingest" || data.phase === "ingest_done") ? "ingest" : prev.phase,
+              phase:
+                data.phase === "ingest" || data.phase === "ingest_done"
+                  ? "ingest"
+                  : prev.phase,
               message: (data.message as string) ?? prev.message,
               filmTitle: (data.film_title as string) ?? prev.filmTitle,
             };
 
           case "crew_start": {
-            // All 6 specialists fire simultaneously
             const agents = ALL_AGENT_NAMES.map((name) => ({
               name,
               status: (SPECIALIST_NAMES.includes(name) ? "running" : "waiting") as AgentStatus,
@@ -96,7 +93,6 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
           }
 
           case "agent_done": {
-            // One specialist finished — mark it done, rest stay running
             const agentName = data.agent as string;
             const agents = setAgentStatus(prev.agents, agentName, "done");
             const doneCount = agents.filter((a) => a.status === "done").length;
@@ -113,16 +109,19 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
           }
 
           case "complete": {
-            const raw = data.bid_range as Record<string, string> | undefined;
-            const bidRange: BidRange | null = raw
-              ? { low: raw.low ?? null, fair: raw.fair ?? null, walk_away: raw.walk_away ?? null }
-              : null;
+            const reportJson = data.report_json as AcquisitionReport | null;
+            const reportRaw = (data.report as string) ?? null;
+            const filmTitle =
+              reportJson?.filmTitle ??
+              (data.film_title as string) ??
+              prev.filmTitle;
+
             return {
               ...prev,
               phase: "complete",
-              report: (data.report as string) ?? null,
-              bidRange,
-              filmTitle: (data.film_title as string) ?? prev.filmTitle,
+              report: reportJson,
+              reportRaw,
+              filmTitle,
               agents: initAgents("done"),
               currentStep: ALL_AGENT_NAMES.length,
               message: "Analysis complete.",

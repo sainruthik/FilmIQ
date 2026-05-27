@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -9,58 +10,77 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        gold: {
-          DEFAULT: "#c9a84c",
-          light: "#e8c87a",
-          dim: "rgba(201,168,76,0.25)",
-          glow: "rgba(201,168,76,0.12)",
-          muted: "#8a7035",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
-        surface: {
-          50: "#1e1e1e",
-          100: "#161616",
-          200: "#111111",
-          300: "#0d0d0d",
-          400: "#080808",
-          500: "#070707",
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
-        cream: "#f0ece0",
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        // Semantic aliases for inline styles
+        slate: {
+          950: "#0a0f1e",
+          900: "#0f172a",
+          800: "#1e293b",
+          700: "#334155",
+          600: "#475569",
+          500: "#64748b",
+          400: "#94a3b8",
+          300: "#cbd5e1",
+          200: "#e2e8f0",
+          100: "#f1f5f9",
+          50: "#f8fafc",
+        },
       },
       fontFamily: {
-        display: ["var(--font-display)", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       animation: {
-        "pulse-gold": "pulse-gold 2.5s ease-in-out infinite",
-        shimmer: "shimmer 2.2s ease-in-out infinite",
-        "fade-up": "fade-up 0.5s ease-out forwards",
+        shimmer: "shimmer 1.6s ease-in-out infinite",
+        "fade-in": "fade-in 0.15s ease-out forwards",
+        "slide-up": "slide-up 0.2s ease-out forwards",
         "spin-slow": "spin 3s linear infinite",
       },
       keyframes: {
-        "pulse-gold": {
-          "0%, 100%": {
-            boxShadow:
-              "0 0 0 1px rgba(201,168,76,0.5), 0 0 20px rgba(201,168,76,0.3)",
-          },
-          "50%": {
-            boxShadow:
-              "0 0 0 1px #c9a84c, 0 0 40px rgba(201,168,76,0.55), 0 0 80px rgba(201,168,76,0.15)",
-          },
-        },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
-        "fade-up": {
-          from: { opacity: "0", transform: "translateY(16px)" },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
-      },
-      backgroundImage: {
-        "gold-gradient":
-          "linear-gradient(135deg, #c9a84c 0%, #e8c87a 50%, #c9a84c 100%)",
-        "surface-gradient":
-          "linear-gradient(180deg, #111111 0%, #070707 100%)",
       },
     },
   },

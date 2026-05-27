@@ -8,6 +8,7 @@ from slowapi.errors import RateLimitExceeded
 
 from api.limiter import limiter
 from api.routes.analyze import router as analyze_router
+from api.routes.scenario import router as scenario_router
 from api.routes.upload import router as upload_router
 from config import settings
 
@@ -34,6 +35,7 @@ app.add_middleware(
 
 app.include_router(upload_router, prefix="/api")
 app.include_router(analyze_router, prefix="/api")
+app.include_router(scenario_router, prefix="/api")
 
 
 @app.get("/health")

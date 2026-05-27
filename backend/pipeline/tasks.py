@@ -19,34 +19,38 @@ _SPECIALIST_SPECS: dict[str, tuple[str, str]] = {
         "search for: past film box office, streaming performance, awards, social following, "
         "and recent trajectory.",
         "Director track record + per-actor commercial value. Label doc claims [PDF p.N]. "
-        "Cite all web sources as markdown hyperlinks in format [Source Name](url).",
+        "Cite all web sources as [Source Name](url).",
     ),
     "market_analyst": (
         "Benchmark '{title}' genre against streaming data. Find: comparable films, streaming "
         "completion rates, subscriber acquisition impact, and regional performance trends.",
         "Genre benchmark report with 3–5 comparable titles and streaming metrics. "
-        "Cite all web sources as markdown hyperlinks in format [Source Name](url).",
+        "Cite all web sources as [Source Name](url).",
     ),
     "deals_researcher": (
         "Find acquisition deal comparables for '{title}'. Search Deadline, Variety, and trade "
-        "press for: similar films sold at recent festivals, reported prices, buyer, and "
-        "territory breakdown.",
-        "Table of 3–5 comparable deals with price, buyer, festival, and territory. "
-        "Cite all web sources as markdown hyperlinks in format [Source Name](url).",
+        "press for: similar films sold at recent festivals, reported prices, buyer, territory. "
+        "For each deal extract: film title, sale price (e.g. $4.5M), buyer name, festival name, "
+        "and the source URL.",
+        "Table of 3–5 comparable deals. For EACH deal provide: title, price, buyer, festival, url. "
+        "Format each deal as a JSON object on its own line: "
+        '{"title":"...", "price":"$X.XM", "buyer":"...", "festival":"...", "url":"https://..."} '
+        "Cite all web sources as [Source Name](url).",
     ),
     "buzz_analyst": (
         "Aggregate current buzz for '{title}'. Search for: festival reviews, critic scores, "
         "trade press coverage, and social sentiment. Summarise overall sentiment and key "
-        "narratives.",
-        "Buzz report: sentiment score, top critic quotes, social indicators, coverage volume. "
-        "Cite all web sources as markdown hyperlinks in format [Source Name](url).",
+        "narratives. Rate overall sentiment on a scale of 0–100.",
+        "Buzz report: sentiment score (0-100), top critic quotes, social indicators. "
+        "Include a SENTIMENT_SCORE: N line. "
+        "Cite all web sources as [Source Name](url).",
     ),
     "risk_analyst": (
         "Identify risk factors for acquiring '{title}'. Check: production issues, cast "
         "controversies, rights disputes, competing releases in same genre window, and "
         "audience risk.",
-        "Risk register: flagged risks, severity (high/med/low), mitigation notes. "
-        "Label doc claims [PDF p.N]. Cite web sources as markdown hyperlinks [Source Name](url).",
+        "Risk register: flagged risks with severity (High/Medium/Low) and mitigation notes. "
+        "Label doc claims [PDF p.N]. Cite web sources as [Source Name](url).",
     ),
 }
 
@@ -65,6 +69,28 @@ def build_specialist_tasks(agents: dict, film_title: str) -> dict:
     }
 
 
+_JSON_SCHEMA = """{
+  "filmTitle": "<string>",
+  "bidRange": {
+    "low": "$X.XM",
+    "fair": "$X.XM",
+    "walkAway": "$X.XM",
+    "justification": "<2-3 sentence paragraph>"
+  },
+  "executiveSummary": "<3-4 sentence paragraph covering story, genre, market fit>",
+  "comparableDeals": [
+    {"title": "<film>", "price": "$X.XM", "buyer": "<platform>", "festival": "<festival>", "url": "<url>"}
+  ],
+  "riskFlags": [
+    {"risk": "<description>", "severity": "High|Medium|Low", "mitigation": "<action>"}
+  ],
+  "festivalBuzz": {
+    "sentimentScore": <integer 0-100>,
+    "summary": "<2 sentence summary of critic/press sentiment>"
+  }
+}"""
+
+
 def build_strategist_task(agent, film_title: str, specialist_outputs: dict[str, str]):
     """Builds strategist task with all specialist results embedded in description."""
     from crewai import Task
@@ -73,30 +99,28 @@ def build_strategist_task(agent, film_title: str, specialist_outputs: dict[str, 
         f"### {key.replace('_', ' ').title()} Findings\n{output}"
         for key, output in specialist_outputs.items()
     )
+
     return Task(
         description=(
-            f"Synthesise all specialist research into a final acquisition report for "
-            f"'{film_title}' with these sections:\n"
-            "1. Story & Genre Analysis\n"
-            "2. Director Track Record\n"
-            "3. Cast Value Score\n"
-            "4. Genre & Market Performance\n"
-            "5. Festival & Critic Buzz\n"
-            "6. Risk Flags\n"
-            "7. Recommended Bid Range — include full justification paragraphs.\n"
-            "8. References — numbered markdown list of all web hyperlinks: [Source Name](url)\n\n"
-            "IMPORTANT: The VERY FIRST LINE of your response must be a JSON sentinel in this "
-            "exact format (no markdown, no backticks, just the line):\n"
-            'BID_JSON: {"low": "$X.XM", "fair": "$X.XM–$X.XM", "walk_away": "$X.XM"}\n'
-            "Replace X.X with the actual dollar values in millions. Then write the full report "
-            "starting on the next line.\n\n"
+            f"Synthesise all specialist research into a structured acquisition report for "
+            f"'{film_title}'.\n\n"
+            "You MUST respond with ONLY a single valid JSON object — no markdown, no code blocks, "
+            "no prose before or after. The JSON must exactly match this schema:\n"
+            f"{_JSON_SCHEMA}\n\n"
+            "Rules:\n"
+            "- bidRange.low is the minimum acceptable offer\n"
+            "- bidRange.fair is the recommended offer range\n"
+            "- bidRange.walkAway is the absolute ceiling\n"
+            "- comparableDeals: include 3–5 entries extracted from the deals_researcher findings\n"
+            "- riskFlags: include all High + Medium risks from risk_analyst findings\n"
+            "- festivalBuzz.sentimentScore: use the score from buzz_analyst (0–100 integer)\n"
+            "- All string values must be properly escaped for JSON\n\n"
             "SPECIALIST RESEARCH FINDINGS:\n"
-            f"{findings}\n\n"
-            "Preserve source labels [PDF p.N]. Preserve all markdown hyperlinks from specialists."
+            f"{findings}"
         ),
         expected_output=(
-            "Complete acquisition report with source-labeled sections, bid range in the exact "
-            "format specified, and a numbered References section with clickable links."
+            "A single valid JSON object matching the schema exactly. "
+            "No markdown fences, no extra text, just the JSON."
         ),
         agent=agent,
     )

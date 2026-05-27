@@ -24,8 +24,8 @@ def _build_llms() -> tuple:
         model=f"openai/{settings.openai_strategist_model}",
         api_key=settings.openai_api_key,
         temperature=0.1,
-        max_tokens=2048,
-        timeout=60,
+        max_tokens=4096,
+        timeout=90,
     )
     return worker, strategist
 

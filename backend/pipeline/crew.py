@@ -19,6 +19,32 @@ _DISPLAY_NAMES = {
 _SENTINEL = {"type": "_sentinel"}
 
 
+def _parse_report_json(text: str) -> dict | None:
+    """Extract and parse JSON from strategist output. Returns None on failure."""
+    stripped = text.strip()
+
+    # Strip markdown fences if present
+    fence = re.match(r"^```(?:json)?\s*([\s\S]*?)```\s*$", stripped, re.IGNORECASE)
+    if fence:
+        stripped = fence.group(1).strip()
+
+    # Try direct parse
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to extract first {...} block
+    match = re.search(r"\{[\s\S]*\}", stripped)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            pass
+
+    return None
+
+
 def _run_specialist(
     key: str,
     agent,
@@ -77,11 +103,10 @@ async def run_analysis(job_id: str, pdf_paths: list[str]) -> AsyncGenerator[dict
             agents = build_agents(rag_invoke)
             specialist_tasks = build_specialist_tasks(agents, film_title)
 
-            # Signal: all 6 specialists starting simultaneously
             emit({
                 "type": "crew_start",
                 "film_title": film_title,
-                "message": f"6 specialists running in parallel…",
+                "message": "6 specialists running in parallel…",
             })
 
             # ── Phase 1: parallel specialists ────────────────────────────────
@@ -117,27 +142,31 @@ async def run_analysis(job_id: str, pdf_paths: list[str]) -> AsyncGenerator[dict
                 verbose=False,
             )
             result = strategist_crew.kickoff()
-            report_text = str(result)
+            raw_text = str(result)
 
-            # Extract BID_JSON sentinel from first line
-            bid_range: dict = {}
-            m = re.match(r"^BID_JSON:\s*(\{[^\n]+\})\s*\n?", report_text)
-            if m:
-                try:
-                    bid_range = json.loads(m.group(1))
-                except Exception:
-                    pass
-                report_text = report_text[m.end():]
+            # Parse structured JSON from strategist
+            report_json = _parse_report_json(raw_text)
 
-            emit({
-                "type": "complete",
-                "report": report_text,
-                "bid_range": bid_range,
-                "film_title": film_title,
-            })
+            if report_json:
+                # Ensure filmTitle is set correctly
+                report_json["filmTitle"] = report_json.get("filmTitle") or film_title
+                emit({
+                    "type": "complete",
+                    "report_json": report_json,
+                    "film_title": report_json["filmTitle"],
+                })
+            else:
+                # Fallback: send raw text when JSON parsing fails
+                import logging
+                logging.getLogger(__name__).warning("Strategist did not return valid JSON; falling back to raw text")
+                emit({
+                    "type": "complete",
+                    "report_json": None,
+                    "report": raw_text,
+                    "film_title": film_title,
+                })
 
         except Exception as exc:
-            # Log full traceback server-side only; never send internals to client
             import logging
             logging.getLogger(__name__).error("Pipeline error: %s", traceback.format_exc())
             emit({

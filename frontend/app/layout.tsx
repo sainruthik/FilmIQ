@@ -1,30 +1,18 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { Sidebar } from "@/components/Sidebar";
 
-const playfair = Playfair_Display({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
   variable: "--font-sans",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "FilmIQ — AI Film Acquisition Intelligence",
+  title: "FilmIQ — Acquisition Intelligence",
   description:
-    "Upload your film documents. Our AI specialist team delivers a complete acquisition analysis with bid range in minutes.",
-  openGraph: {
-    title: "FilmIQ",
-    description: "AI-powered film acquisition intelligence",
-    type: "website",
-  },
+    "AI-powered film acquisition analysis for content executives. Upload documents, get a structured bid range in minutes.",
 };
 
 export default function RootLayout({
@@ -33,9 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
-      <body className="min-h-screen bg-surface-500 text-cream antialiased">
-        {children}
+    <html lang="en" className={inter.variable}>
+      <body className="min-h-screen antialiased" style={{ background: "var(--color-bg)", color: "var(--color-text)" }}>
+        <div className="flex h-screen overflow-hidden">
+          <Sidebar />
+          <main className="flex-1 overflow-y-auto min-w-0">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );
