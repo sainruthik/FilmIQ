@@ -38,7 +38,8 @@ slowapi>=0.1.9
 httpx>=0.27.0
 
 
-# ── External Research Tools (provided via LangChain Community) ───────────────
+# ── External Research Tools ───────────────────────────────────────────────
+ddgs>=4.0.0
 
 # ── Data / Validation ─────────────────────────────────────────────────────────
 pydantic>=2.8.0
