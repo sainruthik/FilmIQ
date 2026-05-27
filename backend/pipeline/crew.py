@@ -5,8 +5,6 @@ import threading
 import traceback
 from collections.abc import AsyncGenerator
 
-from crewai import Crew, Process
-
 from .agents import build_agents
 from .ingest import ingest_pdfs
 from .rag import build_rag_chain
@@ -32,6 +30,8 @@ def _run_specialist(
     results: dict,
     lock: threading.Lock,
 ) -> None:
+    from crewai import Crew, Process
+
     display = _DISPLAY_NAMES[key]
     try:
         mini_crew = Crew(
@@ -106,6 +106,8 @@ async def run_analysis(job_id: str, pdf_paths: list[str]) -> AsyncGenerator[dict
             strategist_task = build_strategist_task(
                 agents["strategist"], film_title, specialist_outputs
             )
+            from crewai import Crew, Process
+
             strategist_crew = Crew(
                 agents=[agents["strategist"]],
                 tasks=[strategist_task],

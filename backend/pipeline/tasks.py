@@ -1,5 +1,3 @@
-from crewai import Task
-
 SPECIALIST_KEYS = [
     "document_analyst",
     "talent_researcher",
@@ -53,8 +51,10 @@ _SPECIALIST_SPECS: dict[str, tuple[str, str]] = {
 }
 
 
-def build_specialist_tasks(agents: dict, film_title: str) -> dict[str, Task]:
+def build_specialist_tasks(agents: dict, film_title: str) -> dict:
     """Returns {key: Task} — all independent, safe to run in parallel."""
+    from crewai import Task
+
     return {
         key: Task(
             description=desc.format(title=film_title),
@@ -65,8 +65,10 @@ def build_specialist_tasks(agents: dict, film_title: str) -> dict[str, Task]:
     }
 
 
-def build_strategist_task(agent, film_title: str, specialist_outputs: dict[str, str]) -> Task:
+def build_strategist_task(agent, film_title: str, specialist_outputs: dict[str, str]):
     """Builds strategist task with all specialist results embedded in description."""
+    from crewai import Task
+
     findings = "\n\n".join(
         f"### {key.replace('_', ' ').title()} Findings\n{output}"
         for key, output in specialist_outputs.items()

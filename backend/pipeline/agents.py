@@ -1,7 +1,5 @@
 from typing import Callable
 
-from crewai import Agent, LLM
-from crewai.tools import BaseTool
 from langchain_community.tools import DuckDuckGoSearchRun
 from pydantic import BaseModel, Field
 
@@ -12,7 +10,9 @@ class _QueryInput(BaseModel):
     query: str = Field(description="Search query string")
 
 
-def _build_llms() -> tuple[LLM, LLM]:
+def _build_llms() -> tuple:
+    from crewai import LLM
+
     worker = LLM(
         model=f"openai/{settings.openai_worker_model}",
         api_key=settings.openai_api_key,
@@ -31,6 +31,8 @@ def _build_llms() -> tuple[LLM, LLM]:
 
 
 def _build_tools(rag_invoke: Callable) -> tuple:
+    from crewai.tools import BaseTool
+
     class FilmDocTool(BaseTool):
         name: str = "Film Document Analyzer"
         description: str = (
@@ -58,7 +60,10 @@ def _build_tools(rag_invoke: Callable) -> tuple:
     return FilmDocTool(), WebSearchTool()
 
 
-def build_agents(rag_invoke: Callable) -> dict[str, Agent]:
+def build_agents(rag_invoke: Callable) -> dict:
+    from crewai import Agent, LLM
+    from crewai.tools import BaseTool
+
     worker, strategist = _build_llms()
     doc_tool, web_tool = _build_tools(rag_invoke)
 
