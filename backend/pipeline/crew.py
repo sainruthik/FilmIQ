@@ -5,10 +5,7 @@ import threading
 import traceback
 from collections.abc import AsyncGenerator
 
-from .agents import build_agents
-from .ingest import ingest_pdfs
-from .rag import build_rag_chain
-from .tasks import SPECIALIST_KEYS, build_specialist_tasks, build_strategist_task
+from .tasks import SPECIALIST_KEYS
 
 _DISPLAY_NAMES = {
     "document_analyst": "Document Analyst",
@@ -59,6 +56,11 @@ async def run_analysis(job_id: str, pdf_paths: list[str]) -> AsyncGenerator[dict
 
     def pipeline() -> None:
         try:
+            from .agents import build_agents
+            from .ingest import ingest_pdfs
+            from .rag import build_rag_chain
+            from .tasks import build_specialist_tasks, build_strategist_task
+
             # ── Ingest ──────────────────────────────────────────────────────
             doc_word = "documents" if len(pdf_paths) > 1 else "document"
             emit({"type": "status", "message": f"Loading and processing {doc_word}…", "phase": "ingest"})

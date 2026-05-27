@@ -7,7 +7,6 @@ from fastapi.responses import StreamingResponse
 from api.auth import mark_analysis_done, mark_analysis_start, verify_job_token
 from api.limiter import limiter
 from config import settings
-from pipeline.crew import run_analysis
 
 router = APIRouter()
 
@@ -39,6 +38,7 @@ async def analyze_stream(
 
     async def event_stream():
         try:
+            from pipeline.crew import run_analysis
             async for event in run_analysis(job_id, [str(p) for p in pdf_paths]):
                 yield f"data: {json.dumps(event)}\n\n"
             yield "data: {\"type\": \"stream_end\"}\n\n"

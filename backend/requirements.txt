@@ -17,7 +17,6 @@ langchain-openai>=0.3.0
 
 # ── Document Parsing ──────────────────────────────────────────────────────────
 pypdf>=4.0.0
-unstructured[pdf]>=0.15.0
 pillow>=10.0.0
 python-magic>=0.4.27
 
