@@ -2,6 +2,14 @@
 
 A prioritized review of the current codebase. Each item states the problem, why it matters, and a concrete solution.
 
+> **Status:** All items below (except #20, which is documented as an accepted
+> trade-off) have been fixed on this branch. Key changes: new `api/jobs.py`
+> job registry (single run per job, reconnect re-attach, global concurrency
+> cap), result persistence + replay, chunked streaming uploads, stateless
+> HMAC tokens, proxy-aware rate limiting, Qdrant/PDF cleanup, DDG throttling
+> with retries, tolerant `BID_JSON` parsing, and dependency/docs cleanup.
+> Backend: 40 tests passing. Frontend: `tsc` + production build clean.
+
 ---
 
 ## 🔴 Critical — these cost money or break the product

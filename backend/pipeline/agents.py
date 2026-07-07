@@ -1,9 +1,17 @@
+import random
+import threading
+import time
 from typing import Callable
 
 from langchain_community.tools import DuckDuckGoSearchRun
 from pydantic import BaseModel, Field
 
 from config import settings
+
+# DuckDuckGo throttles aggressively; without this, six agents searching in
+# parallel get rate-limited and their research comes back empty.
+_search_semaphore = threading.Semaphore(settings.web_search_max_concurrency)
+_SEARCH_RETRIES = 3
 
 
 class _QueryInput(BaseModel):
@@ -17,15 +25,15 @@ def _build_llms() -> tuple:
         model=f"openai/{settings.openai_worker_model}",
         api_key=settings.openai_api_key,
         temperature=0.1,
-        max_tokens=512,
+        max_tokens=2000,
         timeout=60,
     )
     strategist = LLM(
         model=f"openai/{settings.openai_strategist_model}",
         api_key=settings.openai_api_key,
         temperature=0.1,
-        max_tokens=2048,
-        timeout=60,
+        max_tokens=4000,
+        timeout=120,
     )
     return worker, strategist
 
@@ -55,7 +63,17 @@ def _build_tools(rag_invoke: Callable) -> tuple:
         args_schema: type[BaseModel] = _QueryInput
 
         def _run(self, query: str) -> str:
-            return f"[WEB search: {query}]\n{_ddg.run(query)}"
+            last_error: Exception | None = None
+            for attempt in range(_SEARCH_RETRIES):
+                try:
+                    with _search_semaphore:
+                        return f"[WEB search: {query}]\n{_ddg.run(query)}"
+                except Exception as exc:
+                    last_error = exc
+                    time.sleep(2**attempt + random.uniform(0, 1))
+            # Return a message instead of raising so the agent can still
+            # produce a report from document context alone.
+            return f"[WEB search: {query}]\nSearch unavailable (rate limited): {last_error}"
 
     return FilmDocTool(), WebSearchTool()
 
