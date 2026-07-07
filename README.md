@@ -69,7 +69,7 @@ FilmIQ converts raw PDF assets into a decision-ready acquisition report by combi
 | Agents | CrewAI 0.80 |
 | LLMs | OpenAI (GPT-4o / GPT-4o-mini) |
 | Vector DB | Qdrant |
-| Embeddings | BAAI/bge-small-en-v1.5 |
+| Embeddings | OpenAI text-embedding-3-small |
 | Web search | DuckDuckGo via `ddgs` |
 | Rate limiting | `slowapi` |
 
@@ -158,6 +158,8 @@ docker compose up --build
 | `OPENAI_WORKER_MODEL` | No | Default: `gpt-4o-mini` |
 | `OPENAI_STRATEGIST_MODEL` | No | Default: `gpt-4o` |
 | `CORS_ORIGINS` | No | Allowed browser origins |
+| `TOKEN_SECRET` | No | Stable secret for job access tokens (so they survive restarts) |
+| `MAX_CONCURRENT_ANALYSES` | No | Global cap on simultaneous pipelines (default: 3) |
 
 ### Frontend (`frontend/.env.local`)
 
@@ -191,21 +193,29 @@ This setup keeps infrastructure cost minimal and only bills for OpenAI usage.
 ### SSE Event Format
 
 ```
-data: {"type":"ingest","message":"Indexed 3 documents (42 chunks)"}
-data: {"type":"agent","agent":"Market Analyst","message":"...","status":"running"}
-data: {"type":"report","content":"## Acquisition Report...","bid_range":{"low":500000,"fair_value":850000,"walk_away":1200000}}
-data: {"type":"done"}
+data: {"type":"status","message":"Loading and processing document…","phase":"ingest"}
+data: {"type":"crew_start","film_title":"...","message":"6 specialists running in parallel…"}
+data: {"type":"agent_done","agent":"Market Analyst"}
+data: {"type":"strategist_start","message":"Synthesizing all findings…"}
+data: {"type":"complete","report":"## Acquisition Report...","bid_range":{"low":"$0.5M","fair":"$0.8M–$1.0M","walk_away":"$1.2M"},"film_title":"..."}
+data: {"type":"stream_end"}
 ```
+
+Completed jobs persist their result for 24 hours — reconnecting to
+`/api/analyze/{job_id}` replays the finished report instantly instead of
+re-running the analysis, and reconnecting mid-run re-attaches to the running
+pipeline.
 
 ---
 
 ## Project Structure
 
 ```
-film-investor/
+FilmIQ/
 ├── backend/
 │   ├── api/
 │   │   ├── auth.py
+│   │   ├── jobs.py
 │   │   ├── limiter.py
 │   │   └── routes/
 │   │       ├── analyze.py

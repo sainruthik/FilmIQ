@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { NavBar } from "@/components/NavBar";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { ReportDisplay } from "@/components/ReportDisplay";
-import { useAnalysis } from "@/lib/useAnalysis";
+import { SPECIALIST_NAMES, useAnalysis } from "@/lib/useAnalysis";
 import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 
 function AnalysisContent() {
@@ -143,7 +143,7 @@ function AnalysisContent() {
                     style={{ color: "var(--color-text-muted)" }}
                   >
                     {state.phase === "crew"
-                      ? `${doneCount} of 6 specialists complete`
+                      ? `${doneCount} of ${SPECIALIST_NAMES.length} specialists complete`
                       : state.message}
                   </p>
                   <p

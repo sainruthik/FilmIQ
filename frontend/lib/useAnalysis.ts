@@ -29,7 +29,7 @@ export interface AnalysisState {
   error: string | null;
 }
 
-const SPECIALIST_NAMES = [
+export const SPECIALIST_NAMES = [
   "Document Analyst",
   "Talent Researcher",
   "Market Analyst",
@@ -68,6 +68,12 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
 
     source.onmessage = (ev) => {
       const data = JSON.parse(ev.data as string) as Record<string, unknown>;
+
+      // Close explicitly once the stream is logically finished so EventSource
+      // never auto-reconnects (which would hit the rate limit for nothing).
+      if (data.type === "complete" || data.type === "error" || data.type === "stream_end") {
+        source.close();
+      }
 
       setState((prev) => {
         switch (data.type) {

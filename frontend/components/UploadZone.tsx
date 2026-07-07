@@ -24,21 +24,30 @@ export function UploadZone() {
     return null;
   };
 
+  // Dedupe on more than name so two different files that happen to share a
+  // filename (e.g. from different folders) aren't silently dropped.
+  const fileKey = (f: File) => `${f.name}:${f.size}:${f.lastModified}`;
+
   const addFiles = useCallback((incoming: File[]) => {
     setError(null);
+    const valid: File[] = [];
+    const skipped: string[] = [];
     for (const f of incoming) {
       const err = validateFile(f);
-      if (err) { setError(err); return; }
+      if (err) skipped.push(err);
+      else valid.push(f);
     }
+    if (skipped.length > 0) setError(`Skipped: ${skipped.join(" ")}`);
+    if (valid.length === 0) return;
     setFiles((prev) => {
-      const names = new Set(prev.map((f) => f.name));
-      const deduped = incoming.filter((f) => !names.has(f.name));
+      const keys = new Set(prev.map(fileKey));
+      const deduped = valid.filter((f) => !keys.has(fileKey(f)));
       return [...prev, ...deduped];
     });
   }, []);
 
-  const removeFile = (name: string) =>
-    setFiles((prev) => prev.filter((f) => f.name !== name));
+  const removeFile = (key: string) =>
+    setFiles((prev) => prev.filter((f) => fileKey(f) !== key));
 
   const handleSubmit = useCallback(async () => {
     if (files.length === 0) return;
@@ -166,7 +175,7 @@ export function UploadZone() {
 
           {files.map((file) => (
             <div
-              key={file.name}
+              key={fileKey(file)}
               className="px-4 py-3 flex items-center gap-3"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
             >
@@ -179,7 +188,7 @@ export function UploadZone() {
               </span>
               {!uploading && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); removeFile(file.name); }}
+                  onClick={(e) => { e.stopPropagation(); removeFile(fileKey(file)); }}
                   className="text-[var(--color-text-dim)] hover:text-[var(--color-error)] transition-colors shrink-0"
                 >
                   <X size={14} />

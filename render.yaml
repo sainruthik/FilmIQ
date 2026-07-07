@@ -14,3 +14,13 @@ services:
         value: "1"
       - key: PYTHONDONTWRITEBYTECODE
         value: "1"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: QDRANT_HOST
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TOKEN_SECRET
+        generateValue: true

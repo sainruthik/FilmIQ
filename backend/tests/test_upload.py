@@ -43,11 +43,14 @@ class TestUploadValidation:
         assert "filenames" in data
         assert data["filenames"] == ["test.pdf"]
 
-    def test_access_token_is_64_hex_chars(self, client):
+    def test_access_token_is_signed(self, client):
         r = client.post("/api/upload", files=[_pdf()])
         token = r.json()["access_token"]
-        assert len(token) == 64
-        assert all(c in "0123456789abcdef" for c in token)
+        expiry, sep, signature = token.partition(".")
+        assert sep == "."
+        assert expiry.isdigit()
+        assert len(signature) == 64
+        assert all(c in "0123456789abcdef" for c in signature)
 
     def test_non_pdf_extension_rejected(self, client):
         r = client.post(

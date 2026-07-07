@@ -1,39 +1,33 @@
-"""Unit tests for api/auth.py — no external dependencies."""
-import pytest
+"""Unit tests for api/auth.py — stateless HMAC-signed job tokens."""
+import time
+import uuid
 
 import api.auth as auth_module
-from api.auth import (
-    create_job_token,
-    mark_analysis_done,
-    mark_analysis_start,
-    verify_job_token,
-)
+from api.auth import create_job_token, verify_job_token
 
 
 def _unique(name: str) -> str:
-    """Return a unique job-id-like string per test to avoid state bleed."""
-    import uuid
     return f"{name}-{uuid.uuid4().hex[:8]}"
 
 
 class TestCreateJobToken:
-    def test_returns_64_char_hex(self):
-        token = create_job_token(_unique("create"))
-        assert len(token) == 64
-        assert all(c in "0123456789abcdef" for c in token)
+    def test_token_format(self):
+        token = create_job_token(_unique("format"))
+        expiry, sep, signature = token.partition(".")
+        assert sep == "."
+        assert expiry.isdigit()
+        assert len(signature) == 64
+        assert all(c in "0123456789abcdef" for c in signature)
+
+    def test_expiry_is_in_the_future(self):
+        token = create_job_token(_unique("expiry"))
+        expiry = int(token.partition(".")[0])
+        assert expiry > time.time()
 
     def test_different_jobs_get_different_tokens(self):
         t1 = create_job_token(_unique("diff-1"))
         t2 = create_job_token(_unique("diff-2"))
         assert t1 != t2
-
-    def test_same_job_overwritten_on_second_call(self):
-        job_id = _unique("overwrite")
-        t1 = create_job_token(job_id)
-        t2 = create_job_token(job_id)
-        assert t1 != t2
-        assert verify_job_token(job_id, t2) is True
-        assert verify_job_token(job_id, t1) is False
 
 
 class TestVerifyJobToken:
@@ -47,52 +41,28 @@ class TestVerifyJobToken:
         create_job_token(job_id)
         assert verify_job_token(job_id, "completely-wrong-token") is False
 
-    def test_unknown_job_rejected(self):
-        assert verify_job_token("nonexistent-job-xyz", "any-token") is False
+    def test_token_for_other_job_rejected(self):
+        token = create_job_token(_unique("job-a"))
+        assert verify_job_token(_unique("job-b"), token) is False
 
     def test_expired_token_rejected(self):
         job_id = _unique("expired")
+        past = int(time.time()) - 10
+        forged = f"{past}.{auth_module._sign(job_id, past)}"
+        assert verify_job_token(job_id, forged) is False
+
+    def test_tampered_expiry_rejected(self):
+        """Extending the expiry must invalidate the signature."""
+        job_id = _unique("tamper")
         token = create_job_token(job_id)
-        # Force expiry by backdating the stored expiry timestamp
-        hashed, _ = auth_module._job_tokens[job_id]
-        auth_module._job_tokens[job_id] = (hashed, 0.0)
-
-        assert verify_job_token(job_id, token) is False
-
-    def test_expired_token_cleaned_up(self):
-        job_id = _unique("cleanup")
-        token = create_job_token(job_id)
-        hashed, _ = auth_module._job_tokens[job_id]
-        auth_module._job_tokens[job_id] = (hashed, 0.0)
-
-        verify_job_token(job_id, token)
-        assert job_id not in auth_module._job_tokens
+        expiry, _, signature = token.partition(".")
+        tampered = f"{int(expiry) + 9999}.{signature}"
+        assert verify_job_token(job_id, tampered) is False
 
     def test_empty_string_token_rejected(self):
-        job_id = _unique("empty-tok")
-        create_job_token(job_id)
-        assert verify_job_token(job_id, "") is False
+        assert verify_job_token(_unique("empty-tok"), "") is False
 
-
-class TestAnalysisGuard:
-    def test_first_start_succeeds(self):
-        job_id = _unique("guard-first")
-        assert mark_analysis_start(job_id) is True
-        mark_analysis_done(job_id)
-
-    def test_duplicate_start_blocked(self):
-        job_id = _unique("guard-dup")
-        assert mark_analysis_start(job_id) is True
-        assert mark_analysis_start(job_id) is False
-        mark_analysis_done(job_id)
-
-    def test_done_allows_restart(self):
-        job_id = _unique("guard-restart")
-        mark_analysis_start(job_id)
-        mark_analysis_done(job_id)
-        assert mark_analysis_start(job_id) is True
-        mark_analysis_done(job_id)
-
-    def test_done_on_unknown_job_is_safe(self):
-        # Should not raise
-        mark_analysis_done("never-started-job-xyz")
+    def test_malformed_tokens_rejected(self):
+        job_id = _unique("malformed")
+        for bad in ("abc", "123", ".", "123.", ".abc", "12.34.56"):
+            assert verify_job_token(job_id, bad) is False

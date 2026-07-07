@@ -1,12 +1,7 @@
 FROM python:3.11-slim-bookworm AS base
 
-# libmagic1 for python-magic, libgl1/libglib2 for unstructured/pillow
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends \
-        libmagic1 \
-        libgl1 \
-        libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -33,4 +28,4 @@ EXPOSE 10000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:10000/health')" || exit 1
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000", "--workers", "1"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]

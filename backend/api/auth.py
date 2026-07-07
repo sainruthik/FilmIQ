@@ -1,42 +1,37 @@
+"""Stateless, HMAC-signed job access tokens.
+
+Token format: ``<expiry_unix>.<hex signature>`` where the signature is
+HMAC-SHA256(secret, "<job_id>:<expiry_unix>"). Verification recomputes the
+signature, so no server-side storage is needed — tokens survive restarts
+(when TOKEN_SECRET is configured) and work across multiple workers.
+"""
 import hashlib
 import hmac
 import secrets
 import time
 
-# In-memory store — replace with Redis + TTL for production multi-worker deployments.
-# Maps job_id -> (sha256_of_token, expiry_unix_timestamp)
-_job_tokens: dict[str, tuple[str, float]] = {}
-_active_analyses: set[str] = set()
+from config import settings
 
-_TOKEN_TTL_SECONDS: float = 3600.0  # 1 hour
+# Random per-process fallback keeps single-instance deployments working out
+# of the box; set TOKEN_SECRET so tokens outlive restarts and deploys.
+_SECRET = (settings.token_secret or secrets.token_hex(32)).encode()
+
+
+def _sign(job_id: str, expiry: int) -> str:
+    return hmac.new(_SECRET, f"{job_id}:{expiry}".encode(), hashlib.sha256).hexdigest()
 
 
 def create_job_token(job_id: str) -> str:
-    token = secrets.token_hex(32)
-    expiry = time.monotonic() + _TOKEN_TTL_SECONDS
-    _job_tokens[job_id] = (hashlib.sha256(token.encode()).hexdigest(), expiry)
-    return token
+    expiry = int(time.time()) + settings.token_ttl_hours * 3600
+    return f"{expiry}.{_sign(job_id, expiry)}"
 
 
 def verify_job_token(job_id: str, token: str) -> bool:
-    entry = _job_tokens.get(job_id)
-    if not entry:
+    expiry_str, _, signature = token.partition(".")
+    try:
+        expiry = int(expiry_str)
+    except ValueError:
         return False
-    expected_hash, expiry = entry
-    if time.monotonic() > expiry:
-        _job_tokens.pop(job_id, None)
+    if time.time() > expiry:
         return False
-    provided_hash = hashlib.sha256(token.encode()).hexdigest()
-    return hmac.compare_digest(expected_hash, provided_hash)
-
-
-def mark_analysis_start(job_id: str) -> bool:
-    """Returns False if analysis already running for this job."""
-    if job_id in _active_analyses:
-        return False
-    _active_analyses.add(job_id)
-    return True
-
-
-def mark_analysis_done(job_id: str) -> None:
-    _active_analyses.discard(job_id)
+    return hmac.compare_digest(_sign(job_id, expiry), signature)
