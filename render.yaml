@@ -24,3 +24,6 @@ services:
         sync: false
       - key: TOKEN_SECRET
         generateValue: true
+      # CORS_ORIGIN_REGEX intentionally not declared here: leaving it unset
+      # keeps the config.py default (matches any Vercel preview URL for this
+      # project). Only add it if you need to override that pattern.
