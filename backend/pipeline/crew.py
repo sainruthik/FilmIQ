@@ -196,12 +196,18 @@ def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Even
         # Log full traceback server-side only; never send internals to client.
         # PDFs are kept so the user can retry the analysis.
         logger.error("Pipeline error for job %s: %s", job_id, traceback.format_exc())
+        # Exception class name (e.g. "UnexpectedResponse") plus an HTTP
+        # status code when the exception carries one (qdrant-client and most
+        # HTTP clients expose this as a plain int, not a secret) — enough to
+        # tell an auth failure (401/403) from a not-found (404) or a
+        # cluster/service outage (5xx / connection error) from the UI alone.
+        detail = type(exc).__name__
+        status_code = getattr(exc, "status_code", None)
+        if status_code is not None:
+            detail = f"{detail} {status_code}"
         emit({
             "type": "error",
-            # Exception class name only (e.g. "ConnectionError") — enough to
-            # diagnose from the UI without exposing messages/tracebacks that
-            # may contain internals or secrets.
-            "message": f"Analysis failed ({type(exc).__name__}). Please try again or contact support.",
+            "message": f"Analysis failed ({detail}). Please try again or contact support.",
         })
     finally:
         if collection_created:
