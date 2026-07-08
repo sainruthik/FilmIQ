@@ -21,8 +21,15 @@ def _format_docs(docs: list) -> str:
 
 
 def build_rag_chain(vector_store, chunks: list) -> Callable[[str], str]:
-    bm25 = BM25Retriever.from_documents(chunks, k=5)
-    dense = vector_store.as_retriever(search_kwargs={"k": 5})
+    # A fixed k=5 gives a single script the same retrieval breadth as a
+    # 3-document upload (script + press kit + financials), where content
+    # from one document can crowd out the others. Scale with the number of
+    # distinct source files actually present in the chunks.
+    num_sources = len({c.metadata.get("source") for c in chunks}) or 1
+    k = min(20, max(5, 4 * num_sources))
+
+    bm25 = BM25Retriever.from_documents(chunks, k=k)
+    dense = vector_store.as_retriever(search_kwargs={"k": k})
 
     retriever = EnsembleRetriever(
         retrievers=[bm25, dense],

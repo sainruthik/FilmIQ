@@ -157,6 +157,7 @@ docker compose up --build
 | `QDRANT_HOST` | Yes | Qdrant endpoint |
 | `OPENAI_WORKER_MODEL` | No | Default: `gpt-4o-mini` |
 | `OPENAI_STRATEGIST_MODEL` | No | Default: `gpt-4o` |
+| `TAVILY_API_KEY` | No | Use Tavily instead of DuckDuckGo for web search (structured results, more reliable) |
 | `CORS_ORIGINS` | No | Allowed browser origins (exact match, comma-separated) |
 | `CORS_ORIGIN_REGEX` | No | Regex-matched origins. Defaults to allowing any Vercel preview URL for this project, since Vercel mints a new hashed URL per deploy |
 | `TOKEN_SECRET` | No | Stable secret for job access tokens (so they survive restarts) |

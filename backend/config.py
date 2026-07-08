@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # Max concurrent web searches across all agents (DuckDuckGo rate-limits aggressively)
     web_search_max_concurrency: int = 2
 
+    # Optional: when set, web search uses Tavily (structured results with
+    # real URLs, higher reliability) instead of scraping DuckDuckGo. Free
+    # tier at https://tavily.com. Falls back to DuckDuckGo when unset.
+    tavily_api_key: str = ""
+
     # Comma-separated allowed CORS origins — override in .env for production
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
