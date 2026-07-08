@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     # Comma-separated allowed CORS origins — override in .env for production
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
+    # Regex matched against the request Origin in addition to cors_origins.
+    # Vercel mints a new preview URL (a random hash) on every deploy, so an
+    # exact-match list breaks on each push; this pattern allows any preview
+    # deployment of the sainruthiks-projects/film Vercel project without
+    # needing to update CORS_ORIGINS every time. Override or blank out via
+    # CORS_ORIGIN_REGEX for other projects/teams.
+    cors_origin_regex: str = r"^https://film-[a-z0-9]+-sainruthiks-projects\.vercel\.app$"
+
     @field_validator("openai_api_key", "qdrant_api_key", "qdrant_host")
     @classmethod
     def _require_non_blank(cls, value: str, info):

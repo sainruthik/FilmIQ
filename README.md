@@ -157,7 +157,8 @@ docker compose up --build
 | `QDRANT_HOST` | Yes | Qdrant endpoint |
 | `OPENAI_WORKER_MODEL` | No | Default: `gpt-4o-mini` |
 | `OPENAI_STRATEGIST_MODEL` | No | Default: `gpt-4o` |
-| `CORS_ORIGINS` | No | Allowed browser origins |
+| `CORS_ORIGINS` | No | Allowed browser origins (exact match, comma-separated) |
+| `CORS_ORIGIN_REGEX` | No | Regex-matched origins. Defaults to allowing any Vercel preview URL for this project, since Vercel mints a new hashed URL per deploy |
 | `TOKEN_SECRET` | No | Stable secret for job access tokens (so they survive restarts) |
 | `MAX_CONCURRENT_ANALYSES` | No | Global cap on simultaneous pipelines (default: 3) |
 
@@ -175,8 +176,12 @@ docker compose up --build
 
 1. Deploy backend on Render using `backend/Dockerfile`
 2. Deploy frontend on Vercel from `frontend`
-3. Set `NEXT_PUBLIC_API_URL` to the Render backend URL
-4. Set `CORS_ORIGINS` to the Vercel app URL on Render
+3. Set `NEXT_PUBLIC_API_URL` to the Render backend URL, then redeploy the frontend
+   (Next.js bakes `NEXT_PUBLIC_*` vars in at build time — setting the var alone doesn't apply it)
+4. Set `CORS_ORIGINS` to your stable Vercel app URL(s) on Render. Vercel *preview*
+   deployments (URLs with a random hash, e.g. `film-pojole5vw-your-team.vercel.app`)
+   are matched automatically by the `CORS_ORIGIN_REGEX` default — see the env var
+   table above if you're deploying under a different Vercel team/project
 
 This setup keeps infrastructure cost minimal and only bills for OpenAI usage.
 
