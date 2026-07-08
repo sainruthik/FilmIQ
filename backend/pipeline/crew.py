@@ -64,6 +64,27 @@ def _extract_bid_range(report_text: str) -> tuple[dict, str]:
     return {}, report_text
 
 
+def _parse_strategist_result(result, job_id: str) -> tuple[dict, str]:
+    """Extract (bid_range, report_text) from the strategist's CrewOutput.
+
+    Primary path: CrewAI enforced the AcquisitionReport schema
+    (`result.pydantic`), so the bid figures are never missing or malformed.
+    Fallback: `result.pydantic` can be None if the model's response couldn't
+    be coerced into the schema — in that case, fall back to the legacy
+    tolerant sentinel parser on the raw text rather than losing the report.
+    """
+    if result.pydantic is not None:
+        bid_range = {
+            "low": result.pydantic.bid_low,
+            "fair": result.pydantic.bid_fair,
+            "walk_away": result.pydantic.bid_walk_away,
+        }
+        return bid_range, result.pydantic.report_markdown
+
+    logger.warning("Strategist output_pydantic parse failed for job %s; using raw fallback", job_id)
+    return _extract_bid_range(result.raw)
+
+
 def _run_specialist(
     key: str,
     agent,
@@ -85,9 +106,14 @@ def _run_specialist(
         result = mini_crew.kickoff()
         with lock:
             results[key] = str(result)
-    except Exception as exc:
+    except Exception:
+        # Log the real exception server-side only; the strategist reads
+        # `results[key]` directly as research findings, so a raw exception
+        # string here would otherwise leak internals into its synthesis
+        # context (and potentially into the final report).
+        logger.warning("Specialist %s failed: %s", display, traceback.format_exc())
         with lock:
-            results[key] = f"Research incomplete: {exc}"
+            results[key] = "Research incomplete: a tool error prevented this research from completing."
     finally:
         emit({"type": "agent_done", "agent": display})
 
@@ -162,7 +188,7 @@ def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Even
         emit({"type": "strategist_start", "message": "Synthesizing all findings…"})
 
         strategist_task = build_strategist_task(
-            agents["strategist"], film_title, specialist_outputs
+            agents["strategist"], film_title, specialist_tasks, specialist_outputs
         )
         from crewai import Crew, Process
 
@@ -173,7 +199,7 @@ def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Even
             verbose=False,
         )
         result = strategist_crew.kickoff()
-        bid_range, report_text = _extract_bid_range(str(result))
+        bid_range, report_text = _parse_strategist_result(result, job_id)
 
         complete_event = {
             "type": "complete",
@@ -196,12 +222,18 @@ def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Even
         # Log full traceback server-side only; never send internals to client.
         # PDFs are kept so the user can retry the analysis.
         logger.error("Pipeline error for job %s: %s", job_id, traceback.format_exc())
+        # Exception class name (e.g. "UnexpectedResponse") plus an HTTP
+        # status code when the exception carries one (qdrant-client and most
+        # HTTP clients expose this as a plain int, not a secret) — enough to
+        # tell an auth failure (401/403) from a not-found (404) or a
+        # cluster/service outage (5xx / connection error) from the UI alone.
+        detail = type(exc).__name__
+        status_code = getattr(exc, "status_code", None)
+        if status_code is not None:
+            detail = f"{detail} {status_code}"
         emit({
             "type": "error",
-            # Exception class name only (e.g. "ConnectionError") — enough to
-            # diagnose from the UI without exposing messages/tracebacks that
-            # may contain internals or secrets.
-            "message": f"Analysis failed ({type(exc).__name__}). Please try again or contact support.",
+            "message": f"Analysis failed ({detail}). Please try again or contact support.",
         })
     finally:
         if collection_created:
