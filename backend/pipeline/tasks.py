@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 SPECIALIST_KEYS = [
@@ -70,20 +72,54 @@ _SPECIALIST_SPECS: dict[str, tuple[str, str]] = {
     ),
 }
 
+Verdict = Literal["PURSUE", "CAUTION", "PASS"]
+Severity = Literal["low", "med", "high"]
+
+
+class RiskItem(BaseModel):
+    name: str = Field(description="Short risk name, e.g. 'Music clearance'")
+    severity: Severity = Field(description="Impact on the deal if this risk materializes")
+    likelihood: Severity = Field(description="Probability this risk materializes")
+
+
+class ComparableDeal(BaseModel):
+    title: str = Field(description="Comparable film title")
+    buyer: str = Field(description="Acquiring studio or platform, e.g. 'Netflix'")
+    year: str = Field(description="Year of the comparable deal")
+    price: str = Field(description="Reported price as a short string, e.g. '$1.4M'")
+
 
 class AcquisitionReport(BaseModel):
     """Structured strategist output — replaces the old first-line BID_JSON
     sentinel hack with a schema CrewAI enforces directly, so the bid figures
-    can never end up malformed or missing from the client's perspective."""
+    (and now the deal score, verdict, risk matrix, and comparables) can never
+    end up malformed or missing from the client's perspective."""
+
+    genre: str = Field(description="Short genre label, e.g. 'Neo-Noir Thriller'")
+    director: str = Field(description="Director's name, or 'Unknown' if not identified in the research")
+
+    deal_score: int = Field(ge=0, le=100, description="Overall acquisition attractiveness, 0-100")
+    verdict: Verdict = Field(description="PURSUE, CAUTION, or PASS")
+    thesis: str = Field(description="One-sentence acquisition thesis, pull-quote style")
 
     bid_low: str = Field(description="Low bid estimate as a short string, e.g. '$0.5M'")
-    bid_fair: str = Field(description="Fair value bid range as a short string, e.g. '$0.8M-$1.0M'")
+    bid_fair: str = Field(description="Fair value bid as a short string, e.g. '$0.85M'")
     bid_walk_away: str = Field(description="Walk-away ceiling bid as a short string, e.g. '$1.2M'")
+    bid_rationale: str = Field(description="Full justification paragraphs for the bid range")
+
+    strengths: list[str] = Field(description="3-5 short strength bullets, no citations needed")
+    concerns: list[str] = Field(description="3-5 short concern bullets, no citations needed")
+    risks: list[RiskItem] = Field(description="3-6 structured risks for a severity/likelihood matrix")
+    comparables: list[ComparableDeal] = Field(description="2-5 comparable acquisition deals")
+
     report_markdown: str = Field(
         description=(
-            "Full markdown acquisition report covering all 8 required sections, including a "
-            "'Recommended Bid Range' section with full justification paragraphs for the "
-            "bid_low/bid_fair/bid_walk_away figures."
+            "Full narrative summary covering: Story & Genre Analysis, Director Track Record, "
+            "Cast Value, Genre & Market Performance, Festival & Critic Buzz, and a numbered "
+            "References list of all web hyperlinks [Source Name](url). Preserve [PDF p.N] "
+            "labels and markdown hyperlinks from the specialist research. Do not repeat the "
+            "risk register, comparables table, or bid justification here — those are captured "
+            "in the risks, comparables, and bid_rationale fields."
         )
     )
 
@@ -125,8 +161,9 @@ def build_strategist_task(
     incomplete_note = (
         "\n\nNOTE: research for the following areas came back incomplete (rate-limited, "
         f"timed out, or errored): {', '.join(incomplete)}. Say so explicitly in the relevant "
-        "report section instead of presenting placeholder text as fact, and reflect the "
-        "reduced confidence in your bid-range justification."
+        "report section instead of presenting placeholder text as fact, lower deal_score and "
+        "confidence accordingly, and reflect the reduced confidence in your bid-range "
+        "justification."
         if incomplete
         else ""
     )
@@ -134,24 +171,31 @@ def build_strategist_task(
     return Task(
         description=(
             f"Synthesise all specialist research (provided as context) into a final "
-            f"acquisition report for '{film_title}' with these sections:\n"
-            "1. Story & Genre Analysis\n"
-            "2. Director Track Record\n"
-            "3. Cast Value Score\n"
-            "4. Genre & Market Performance\n"
-            "5. Festival & Critic Buzz\n"
-            "6. Risk Flags\n"
-            "7. Recommended Bid Range — include full justification paragraphs.\n"
-            "8. References — numbered markdown list of all web hyperlinks: [Source Name](url)\n\n"
+            f"acquisition report for '{film_title}'. Produce:\n"
+            "- genre and director (short strings)\n"
+            "- deal_score (0-100) and verdict (PURSUE/CAUTION/PASS) reflecting overall "
+            "acquisition attractiveness\n"
+            "- thesis: one punchy sentence capturing why to buy (or pass)\n"
+            "- bid_low / bid_fair / bid_walk_away plus bid_rationale justifying them\n"
+            "- strengths and concerns as short bullet lists\n"
+            "- risks: 3-6 items, each with a severity and likelihood (low/med/high), drawn "
+            "from the Risk Analyst's findings\n"
+            "- comparables: 2-5 deals with buyer, year, and price, drawn from the Deals "
+            "Researcher's findings\n"
+            "- report_markdown: the narrative summary (story/genre, director track record, "
+            "cast value, market performance, festival/critic buzz) plus a numbered References "
+            "list of every web hyperlink cited by the specialists\n\n"
             "Preserve source labels [PDF p.N] and all markdown hyperlinks from the specialist "
-            "research. Never state a specific number without a citation from that research; "
-            "if a specialist could not confirm a figure, say so rather than estimating."
+            "research in report_markdown. Never state a specific number without a citation "
+            "from that research; if a specialist could not confirm a figure, say so rather "
+            "than estimating."
             f"{incomplete_note}"
         ),
         expected_output=(
-            "bid_low, bid_fair, and bid_walk_away as short strings (e.g. '$0.8M'), plus "
-            "report_markdown containing the complete 8-section acquisition report with "
-            "source-labeled claims and a numbered References section."
+            "A fully populated AcquisitionReport: genre, director, deal_score, verdict, "
+            "thesis, bid figures with rationale, strengths, concerns, a structured risk "
+            "register, comparable deals, and the narrative report_markdown with a numbered "
+            "References section."
         ),
         agent=agent,
         context=list(specialist_tasks.values()),

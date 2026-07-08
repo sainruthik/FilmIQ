@@ -8,6 +8,8 @@ from slowapi.errors import RateLimitExceeded
 
 from api.limiter import limiter
 from api.routes.analyze import router as analyze_router
+from api.routes.compare import router as compare_router
+from api.routes.reports import router as reports_router
 from api.routes.upload import router as upload_router
 from config import settings
 
@@ -15,6 +17,9 @@ from config import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
+    from db import init_db
+
+    init_db()
     yield
 
 
@@ -35,6 +40,8 @@ app.add_middleware(
 
 app.include_router(upload_router, prefix="/api")
 app.include_router(analyze_router, prefix="/api")
+app.include_router(reports_router, prefix="/api")
+app.include_router(compare_router, prefix="/api")
 
 
 @app.get("/health")

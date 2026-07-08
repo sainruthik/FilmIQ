@@ -9,58 +9,56 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        gold: {
-          DEFAULT: "#c9a84c",
-          light: "#e8c87a",
-          dim: "rgba(201,168,76,0.25)",
-          glow: "rgba(201,168,76,0.12)",
-          muted: "#8a7035",
+        // "Trade Paper" design system
+        paper: "#f7f3ec",
+        card: "#fffdf9",
+        "card-alt": "#f2ede2",
+        ink: "#1a160f",
+        body: "#3a352b",
+        muted: "#5c564a",
+        faint: "#837b6c",
+        ghost: "#b3aa99",
+        accent: {
+          DEFAULT: "#c94f32",
         },
-        surface: {
-          50: "#1e1e1e",
-          100: "#161616",
-          200: "#111111",
-          300: "#0d0d0d",
-          400: "#080808",
-          500: "#070707",
-        },
-        cream: "#f0ece0",
+        pursue: "#2f7d52",
+        caution: "#a97a1c",
+        pass: "#c94f32",
+        "web-source": "#5878a0",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       animation: {
-        "pulse-gold": "pulse-gold 2.5s ease-in-out infinite",
-        shimmer: "shimmer 2.2s ease-in-out infinite",
-        "fade-up": "fade-up 0.5s ease-out forwards",
-        "spin-slow": "spin 3s linear infinite",
+        "fq-up": "fq-up 0.6s ease both",
+        "fq-dot": "fq-dot 1.6s ease infinite",
+        "fq-shimmer": "fq-shimmer 2.2s linear infinite",
+        "fq-blink": "fq-blink 1s step-end infinite",
+        "fq-float": "fq-float 5s ease-in-out infinite",
       },
       keyframes: {
-        "pulse-gold": {
-          "0%, 100%": {
-            boxShadow:
-              "0 0 0 1px rgba(201,168,76,0.5), 0 0 20px rgba(201,168,76,0.3)",
-          },
-          "50%": {
-            boxShadow:
-              "0 0 0 1px #c9a84c, 0 0 40px rgba(201,168,76,0.55), 0 0 80px rgba(201,168,76,0.15)",
-          },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
-        "fade-up": {
-          from: { opacity: "0", transform: "translateY(16px)" },
+        "fq-up": {
+          from: { opacity: "0", transform: "translateY(14px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
-      },
-      backgroundImage: {
-        "gold-gradient":
-          "linear-gradient(135deg, #c9a84c 0%, #e8c87a 50%, #c9a84c 100%)",
-        "surface-gradient":
-          "linear-gradient(180deg, #111111 0%, #070707 100%)",
+        "fq-dot": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: ".25" },
+        },
+        "fq-shimmer": {
+          from: { backgroundPosition: "-200% 0" },
+          to: { backgroundPosition: "200% 0" },
+        },
+        "fq-blink": {
+          "0%, 49%": { opacity: "1" },
+          "50%, 100%": { opacity: "0" },
+        },
+        "fq-float": {
+          "0%, 100%": { transform: "rotate(1.6deg) translateY(0)" },
+          "50%": { transform: "rotate(1.6deg) translateY(-7px)" },
+        },
       },
     },
   },

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getAnalysisUrl } from "./api";
+import type { ComparableDeal, RiskItem, Source } from "./trade";
 
 export type AgentStatus = "waiting" | "running" | "done";
 export type Phase = "idle" | "ingest" | "crew" | "complete" | "error";
@@ -9,6 +10,9 @@ export type Phase = "idle" | "ingest" | "crew" | "complete" | "error";
 export interface AgentInfo {
   name: string;
   status: AgentStatus;
+  finding?: string;
+  sources?: Source[];
+  elapsed?: string; // server-provided "m:ss" once done
 }
 
 export interface BidRange {
@@ -24,8 +28,23 @@ export interface AnalysisState {
   agents: AgentInfo[];
   currentStep: number;
   totalSteps: number;
+  crewStartedAt: number | null;
+  now: number;
+
   report: string | null;
   bidRange: BidRange | null;
+  genre: string | null;
+  director: string | null;
+  dealScore: number | null;
+  verdict: string | null;
+  thesis: string | null;
+  bidRationale: string | null;
+  strengths: string[];
+  concerns: string[];
+  risks: RiskItem[];
+  comparables: ComparableDeal[];
+  specialistFindings: Record<string, string>;
+
   error: string | null;
 }
 
@@ -45,22 +64,41 @@ function initAgents(status: AgentStatus = "waiting"): AgentInfo[] {
   return ALL_AGENT_NAMES.map((name) => ({ name, status }));
 }
 
-function setAgentStatus(agents: AgentInfo[], name: string, status: AgentStatus): AgentInfo[] {
-  return agents.map((a) => (a.name === name ? { ...a, status } : a));
+function updateAgent(agents: AgentInfo[], name: string, patch: Partial<AgentInfo>): AgentInfo[] {
+  return agents.map((a) => (a.name === name ? { ...a, ...patch } : a));
 }
+
+const initialState: AnalysisState = {
+  phase: "idle",
+  message: "Starting analysis…",
+  filmTitle: "",
+  agents: initAgents("waiting"),
+  currentStep: 0,
+  totalSteps: ALL_AGENT_NAMES.length,
+  crewStartedAt: null,
+  now: Date.now(),
+  report: null,
+  bidRange: null,
+  genre: null,
+  director: null,
+  dealScore: null,
+  verdict: null,
+  thesis: null,
+  bidRationale: null,
+  strengths: [],
+  concerns: [],
+  risks: [],
+  comparables: [],
+  specialistFindings: {},
+  error: null,
+};
 
 export function useAnalysis(jobId: string, filenameHint: string): AnalysisState {
   const [state, setState] = useState<AnalysisState>({
-    phase: "idle",
-    message: "Starting analysis…",
+    ...initialState,
     filmTitle: filenameHint.replace(/\.pdf$/i, "").replace(/[-_]/g, " "),
-    agents: initAgents("waiting"),
-    currentStep: 0,
-    totalSteps: ALL_AGENT_NAMES.length,
-    report: null,
-    bidRange: null,
-    error: null,
   });
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!jobId) return;
@@ -73,6 +111,7 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
       // never auto-reconnects (which would hit the rate limit for nothing).
       if (data.type === "complete" || data.type === "error" || data.type === "stream_end") {
         source.close();
+        if (tickRef.current) clearInterval(tickRef.current);
       }
 
       setState((prev) => {
@@ -86,11 +125,16 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
             };
 
           case "crew_start": {
-            // All 6 specialists fire simultaneously
+            // All specialists fire simultaneously
             const agents = ALL_AGENT_NAMES.map((name) => ({
               name,
               status: (SPECIALIST_NAMES.includes(name) ? "running" : "waiting") as AgentStatus,
             }));
+            if (!tickRef.current) {
+              tickRef.current = setInterval(() => {
+                setState((s) => ({ ...s, now: Date.now() }));
+              }, 1000);
+            }
             return {
               ...prev,
               phase: "crew",
@@ -98,19 +142,24 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
               message: (data.message as string) ?? prev.message,
               agents,
               currentStep: 0,
+              crewStartedAt: Date.now(),
             };
           }
 
           case "agent_done": {
-            // One specialist finished — mark it done, rest stay running
             const agentName = data.agent as string;
-            const agents = setAgentStatus(prev.agents, agentName, "done");
+            const agents = updateAgent(prev.agents, agentName, {
+              status: "done",
+              finding: data.finding as string | undefined,
+              sources: (data.sources as Source[] | undefined) ?? [],
+              elapsed: data.elapsed as string | undefined,
+            });
             const doneCount = agents.filter((a) => a.status === "done").length;
             return { ...prev, agents, currentStep: doneCount };
           }
 
           case "strategist_start": {
-            const agents = setAgentStatus(prev.agents, STRATEGIST_NAME, "running");
+            const agents = updateAgent(prev.agents, STRATEGIST_NAME, { status: "running" });
             return {
               ...prev,
               agents,
@@ -119,15 +168,27 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
           }
 
           case "complete": {
-            const raw = data.bid_range as Record<string, string> | undefined;
-            const bidRange: BidRange | null = raw
-              ? { low: raw.low ?? null, fair: raw.fair ?? null, walk_away: raw.walk_away ?? null }
+            const rawBid = data.bid_range as Record<string, string> | undefined;
+            const bidRange: BidRange | null = rawBid
+              ? { low: rawBid.low ?? null, fair: rawBid.fair ?? null, walk_away: rawBid.walk_away ?? null }
               : null;
+            if (tickRef.current) clearInterval(tickRef.current);
             return {
               ...prev,
               phase: "complete",
               report: (data.report as string) ?? null,
               bidRange,
+              genre: (data.genre as string) ?? null,
+              director: (data.director as string) ?? null,
+              dealScore: (data.deal_score as number) ?? null,
+              verdict: (data.verdict as string) ?? null,
+              thesis: (data.thesis as string) ?? null,
+              bidRationale: (data.bid_rationale as string) ?? null,
+              strengths: (data.strengths as string[]) ?? [],
+              concerns: (data.concerns as string[]) ?? [],
+              risks: (data.risks as RiskItem[]) ?? [],
+              comparables: (data.comparables as ComparableDeal[]) ?? [],
+              specialistFindings: (data.specialist_findings as Record<string, string>) ?? {},
               filmTitle: (data.film_title as string) ?? prev.filmTitle,
               agents: initAgents("done"),
               currentStep: ALL_AGENT_NAMES.length,
@@ -136,6 +197,7 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
           }
 
           case "error":
+            if (tickRef.current) clearInterval(tickRef.current);
             return {
               ...prev,
               phase: "error",
@@ -154,9 +216,13 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
         return { ...prev, phase: "error", error: "Connection to analysis server was lost." };
       });
       source.close();
+      if (tickRef.current) clearInterval(tickRef.current);
     };
 
-    return () => source.close();
+    return () => {
+      source.close();
+      if (tickRef.current) clearInterval(tickRef.current);
+    };
   }, [jobId]);
 
   return state;

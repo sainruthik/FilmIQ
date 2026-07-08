@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, FileText, AlertCircle, Loader2, X, Plus } from "lucide-react";
+import { FileText, AlertCircle, Loader2, X, Plus } from "lucide-react";
 import { uploadFilms } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
@@ -82,10 +82,11 @@ export function UploadZone() {
   const isEmpty = files.length === 0;
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full">
       {/* Drop zone */}
       <div
-        className={`upload-zone rounded-2xl p-10 cursor-pointer flex flex-col items-center gap-5 transition-all ${dragging ? "dragging" : ""}`}
+        className={`upload-zone-trade cursor-pointer text-center ${dragging ? "dragging" : ""}`}
+        style={{ padding: "52px 36px 40px" }}
         onDrop={onDrop}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
@@ -104,70 +105,51 @@ export function UploadZone() {
         />
 
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all"
+          className="mx-auto flex items-center justify-center"
           style={{
-            background: dragging ? "rgba(201,168,76,0.14)" : "rgba(201,168,76,0.07)",
-            border: "1px solid rgba(201,168,76,0.3)",
+            width: 56,
+            height: 56,
+            borderRadius: 12,
+            background: "rgba(201,79,50,0.08)",
+            border: "1px solid rgba(201,79,50,0.3)",
+            marginBottom: 18,
+            fontSize: 22,
+            color: "#c94f32",
           }}
         >
-          {dragging ? (
-            <FileText size={26} className="text-gold" />
-          ) : (
-            <Upload size={26} className="text-gold opacity-80" />
-          )}
+          ⤒
         </div>
 
-        <div className="text-center">
-          {dragging ? (
-            <>
-              <p className="font-display text-xl text-cream mb-1">Release to add</p>
-              <p className="text-sm text-[var(--color-text-muted)] font-sans">
-                Files will be added to the queue
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="font-display text-xl text-cream mb-1">
-                Drop film documents here
-              </p>
-              <p className="text-sm text-[var(--color-text-muted)] font-sans mb-4">
-                Press kits · Scripts · Financial summaries · Pitch decks
-              </p>
-              <div className="flex items-center gap-2 justify-center">
-                <button className="btn-gold px-6 py-2.5 rounded-lg text-sm font-sans font-semibold pointer-events-none">
-                  Choose PDFs
-                </button>
-                {!isEmpty && (
-                  <span className="text-xs font-sans text-[var(--color-text-dim)] pointer-events-none">
-                    or add more
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        <p className="text-xs text-[var(--color-text-dim)] font-sans">
-          PDF only · Max 50 MB per file · Multiple files supported
+        <p className="font-display" style={{ fontSize: 24, color: "#1a160f" }}>
+          {dragging ? "Release to add" : "Drop film documents here"}
         </p>
+        <p style={{ fontSize: 13, color: "#837b6c", margin: "8px 0 20px" }}>
+          {dragging ? "Files will be added to the queue" : "Press kits · Scripts · Financial summaries · Pitch decks"}
+        </p>
+
+        <button className="btn-primary pointer-events-none" style={{ fontSize: 14, padding: "12px 28px", borderRadius: 8 }}>
+          {isEmpty ? "Choose PDFs" : "Add more"}
+        </button>
+
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", color: "#b3aa99", marginTop: 18 }}>
+          PDF ONLY · MAX 50MB · MULTIPLE FILES · NO SIGNUP
+        </div>
       </div>
 
       {/* File list */}
       {files.length > 0 && (
-        <div
-          className="mt-4 rounded-xl overflow-hidden"
-          style={{ border: "1px solid var(--color-border)" }}
-        >
+        <div className="trade-card mt-4 overflow-hidden">
           <div
             className="px-4 py-2.5 flex items-center justify-between"
-            style={{ background: "rgba(201,168,76,0.04)", borderBottom: "1px solid var(--color-border)" }}
+            style={{ background: "#f2ede2", borderBottom: "1px solid var(--color-border)" }}
           >
-            <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-gold">
-              {files.length} {files.length === 1 ? "Document" : "Documents"} Queued
+            <p className="mono-label">
+              {files.length} {files.length === 1 ? "DOCUMENT" : "DOCUMENTS"} QUEUED
             </p>
             <button
               onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-              className="flex items-center gap-1 text-[11px] font-sans text-[var(--color-text-muted)] hover:text-gold transition-colors"
+              className="flex items-center gap-1 transition-colors"
+              style={{ fontSize: 11, color: "#5c564a" }}
             >
               <Plus size={12} /> Add more
             </button>
@@ -177,19 +159,20 @@ export function UploadZone() {
             <div
               key={fileKey(file)}
               className="px-4 py-3 flex items-center gap-3"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+              style={{ borderBottom: "1px solid var(--color-border-row)" }}
             >
-              <FileText size={14} className="text-gold shrink-0 opacity-70" />
-              <span className="flex-1 text-sm font-sans text-[var(--color-text-muted)] truncate">
+              <FileText size={14} className="shrink-0" style={{ color: "#c94f32", opacity: 0.8 }} />
+              <span className="flex-1 text-sm truncate" style={{ color: "#3a352b" }}>
                 {file.name}
               </span>
-              <span className="text-xs font-sans text-[var(--color-text-dim)] shrink-0">
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#837b6c" }} className="shrink-0">
                 {formatBytes(file.size)}
               </span>
               {!uploading && (
                 <button
                   onClick={(e) => { e.stopPropagation(); removeFile(fileKey(file)); }}
-                  className="text-[var(--color-text-dim)] hover:text-[var(--color-error)] transition-colors shrink-0"
+                  className="shrink-0 transition-colors"
+                  style={{ color: "#b3aa99" }}
                 >
                   <X size={14} />
                 </button>
@@ -197,11 +180,12 @@ export function UploadZone() {
             </div>
           ))}
 
-          <div className="px-4 py-3" style={{ background: "rgba(201,168,76,0.03)" }}>
+          <div className="px-4 py-3" style={{ background: "#f2ede2" }}>
             <button
               onClick={(e) => { e.stopPropagation(); handleSubmit(); }}
               disabled={uploading}
-              className="btn-gold w-full py-2.5 rounded-lg text-sm font-sans font-semibold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ padding: "10px 0" }}
             >
               {uploading ? (
                 <>
@@ -221,11 +205,11 @@ export function UploadZone() {
 
       {error && (
         <div
-          className="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-sans animate-fade-in"
+          className="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
           style={{
-            background: "rgba(248,113,113,0.06)",
-            border: "1px solid rgba(248,113,113,0.25)",
-            color: "var(--color-error)",
+            background: "rgba(201,79,50,0.06)",
+            border: "1px solid rgba(201,79,50,0.25)",
+            color: "#c94f32",
           }}
         >
           <AlertCircle size={16} className="shrink-0" />
