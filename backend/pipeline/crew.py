@@ -192,13 +192,16 @@ def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Even
         for p in pdf_paths:
             Path(p).unlink(missing_ok=True)
 
-    except Exception:
+    except Exception as exc:
         # Log full traceback server-side only; never send internals to client.
         # PDFs are kept so the user can retry the analysis.
         logger.error("Pipeline error for job %s: %s", job_id, traceback.format_exc())
         emit({
             "type": "error",
-            "message": "Analysis failed. Please try again or contact support.",
+            # Exception class name only (e.g. "ConnectionError") — enough to
+            # diagnose from the UI without exposing messages/tracebacks that
+            # may contain internals or secrets.
+            "message": f"Analysis failed ({type(exc).__name__}). Please try again or contact support.",
         })
     finally:
         if collection_created:
