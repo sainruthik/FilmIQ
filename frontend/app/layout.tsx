@@ -1,18 +1,26 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans } from "next/font/google";
+import { Instrument_Serif, Schibsted_Grotesk, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400"],
+  style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
 });
 
-const dmSans = DM_Sans({
+const schibstedGrotesk = Schibsted_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const splineSansMono = Spline_Sans_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-sans",
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -33,10 +41,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
-      <body className="min-h-screen bg-surface-500 text-cream antialiased">
-        {children}
-      </body>
+    <html
+      lang="en"
+      className={`${instrumentSerif.variable} ${schibstedGrotesk.variable} ${splineSansMono.variable}`}
+    >
+      <body className="min-h-screen bg-paper text-ink antialiased">{children}</body>
     </html>
   );
 }

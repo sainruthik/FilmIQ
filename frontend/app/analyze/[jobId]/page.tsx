@@ -2,12 +2,10 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { NavBar } from "@/components/NavBar";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { ReportDisplay } from "@/components/ReportDisplay";
-import { SPECIALIST_NAMES, useAnalysis } from "@/lib/useAnalysis";
-import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { useAnalysis, SPECIALIST_NAMES } from "@/lib/useAnalysis";
 
 function AnalysisContent() {
   const params = useParams<{ jobId: string }>();
@@ -19,305 +17,120 @@ function AnalysisContent() {
 
   const state = useAnalysis(params.jobId, filename);
   const doneCount = state.agents.filter((a) => a.status === "done").length;
-  const progress = Math.round((state.currentStep / state.totalSteps) * 100);
+  const totalAgents = SPECIALIST_NAMES.length + 1;
+  const progressPct = Math.round((state.currentStep / state.totalSteps) * 100);
   const isActive = state.phase === "ingest" || state.phase === "crew";
   const isDone = state.phase === "complete";
   const isError = state.phase === "error";
 
-  return (
-    <div className="min-h-[100dvh] pt-14" style={{ background: "var(--color-bg)" }}>
-      <NavBar />
+  if (isDone) {
+    return (
+      <div style={{ background: "#f7f3ec", minHeight: "100dvh" }}>
+        <NavBar sectionLabel={`REPORT / ${state.filmTitle.toUpperCase()}`}>
+          <span className="flex items-center gap-1.5" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#2f7d52" }}>
+            <span className="rounded-full" style={{ width: 7, height: 7, background: "#2f7d52" }} />
+            ANALYSIS COMPLETE
+          </span>
+          <button className="btn-dark" onClick={() => window.print()}>
+            Export memo ⤓
+          </button>
+        </NavBar>
 
-      {/* ── CINEMATIC HEADER ── */}
-      <div
-        style={{
-          borderBottom: "1px solid var(--color-border)",
-          background:
-            "linear-gradient(180deg, rgba(201,168,76,0.035) 0%, transparent 100%)",
-        }}
-      >
-        {/* Film-strip perforation top */}
-        <div
-          className="h-[2px] w-full"
-          style={{
-            background:
-              "repeating-linear-gradient(90deg, transparent 0, transparent 11px, rgba(201,168,76,0.22) 11px, rgba(201,168,76,0.22) 15px)",
-          }}
+        <div className="animate-fq-up" style={{ padding: "36px 32px 24px", borderBottom: "1px solid var(--color-border)" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "#c94f32", marginBottom: 10 }}>
+            ACQUISITION REPORT
+          </div>
+          <h1 className="font-display" style={{ fontSize: "clamp(2rem,4vw,3.5rem)", lineHeight: 1, color: "#1a160f" }}>
+            {state.filmTitle}
+          </h1>
+        </div>
+
+        <ReportDisplay
+          report={state.report ?? ""}
+          filmTitle={state.filmTitle}
+          bidRange={state.bidRange}
+          genre={state.genre}
+          director={state.director}
+          dealScore={state.dealScore}
+          verdict={state.verdict}
+          thesis={state.thesis}
+          bidRationale={state.bidRationale}
+          strengths={state.strengths}
+          concerns={state.concerns}
+          risks={state.risks}
+          comparables={state.comparables}
+          specialistFindings={state.specialistFindings}
         />
+      </div>
+    );
+  }
 
-        <div className="max-w-5xl mx-auto px-8 py-10">
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring" as const, stiffness: 90, damping: 22 }}
-            className="flex items-start justify-between gap-6"
-          >
-            {/* Title block */}
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-[9px] font-sans font-semibold uppercase tracking-[0.26em] mb-3"
-                style={{ color: "var(--color-gold)", opacity: 0.65 }}
-              >
-                Acquisition Analysis
-              </p>
-              <h1
-                className="font-display leading-[1.06] tracking-tight"
-                style={{
-                  fontSize: "clamp(1.9rem,4vw,3rem)",
-                  color: "var(--color-text)",
-                }}
-              >
-                {state.filmTitle}
-              </h1>
-              {filenames.length > 1 && (
-                <p
-                  className="text-[11px] font-sans mt-2"
-                  style={{ color: "var(--color-text-dim)" }}
-                >
-                  {filenames.length} documents —{" "}
-                  {filenames.slice(0, 3).join(", ")}
-                  {filenames.length > 3 ? ` +${filenames.length - 3} more` : ""}
-                </p>
-              )}
-            </div>
-
-            {/* Phase badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.88 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                type: "spring" as const,
-                stiffness: 160,
-                damping: 20,
-                delay: 0.12,
-              }}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-sans font-semibold shrink-0 mt-1"
-              style={{
-                background: isDone
-                  ? "rgba(74,222,128,0.08)"
-                  : isError
-                  ? "rgba(248,113,113,0.08)"
-                  : "rgba(201,168,76,0.08)",
-                border: isDone
-                  ? "1px solid rgba(74,222,128,0.35)"
-                  : isError
-                  ? "1px solid rgba(248,113,113,0.35)"
-                  : "1px solid rgba(201,168,76,0.35)",
-                color: isDone
-                  ? "var(--color-success)"
-                  : isError
-                  ? "var(--color-error)"
-                  : "var(--color-gold)",
-              }}
-            >
-              {isDone ? (
-                <CheckCircle2 size={13} />
-              ) : isError ? (
-                <AlertCircle size={13} />
-              ) : (
-                <Loader2 size={13} className="animate-spin" />
-              )}
-              {isDone
-                ? "Analysis Complete"
-                : isError
-                ? "Analysis Failed"
-                : state.phase === "ingest"
-                ? "Ingesting…"
-                : "Analyzing…"}
-            </motion.div>
-          </motion.div>
-
-          {/* Progress strip — shown only while active */}
-          <AnimatePresence>
-            {isActive && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ type: "spring" as const, stiffness: 100, damping: 22 }}
-                className="mt-8"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <p
-                    className="text-[11px] font-sans"
-                    style={{ color: "var(--color-text-muted)" }}
-                  >
-                    {state.phase === "crew"
-                      ? `${doneCount} of ${SPECIALIST_NAMES.length} specialists complete`
-                      : state.message}
-                  </p>
-                  <p
-                    className="text-[11px] font-sans font-semibold tabular-nums"
-                    style={{ color: "var(--color-gold)" }}
-                  >
-                    {progress}%
-                  </p>
-                </div>
-                <div className="progress-track h-0.5">
-                  <div
-                    className="progress-fill h-full"
-                    style={{ width: `${Math.max(progress, 3)}%` }}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+  if (isError) {
+    return (
+      <div style={{ background: "#f7f3ec", minHeight: "100dvh" }}>
+        <NavBar sectionLabel="ANALYZING" />
+        <div className="flex flex-col items-center gap-5 text-center" style={{ padding: "80px 32px" }}>
+          <p className="font-display" style={{ fontSize: 28, color: "#1a160f" }}>Analysis failed</p>
+          <p style={{ fontSize: 14, color: "#5c564a", maxWidth: 420 }}>{state.error}</p>
+          <a href="/" className="btn-tertiary">Try another file</a>
         </div>
       </div>
+    );
+  }
 
-      {/* ── MAIN CONTENT ── */}
-      <div className="max-w-5xl mx-auto px-8 py-12">
+  return (
+    <div style={{ background: "#f7f3ec", minHeight: "100dvh" }}>
+      <NavBar sectionLabel="ANALYZING">
+        <span className="flex items-center gap-1.5" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#c94f32" }}>
+          <span className="rounded-full animate-fq-dot" style={{ width: 7, height: 7, background: "#c94f32" }} />
+          LIVE
+        </span>
+      </NavBar>
 
-        {/* ── Ingesting state ── atmospheric card */}
-        <AnimatePresence>
-          {state.phase === "ingest" && (
-            <motion.div
-              key="ingest"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ type: "spring" as const, stiffness: 85, damping: 22 }}
-              className="rounded-2xl p-14 flex flex-col items-center gap-7 text-center mb-8 relative overflow-hidden"
+      <div className="mx-auto" style={{ maxWidth: 860 }}>
+        <div className="animate-fq-up" style={{ padding: "32px 32px 20px" }}>
+          <div className="flex items-end gap-5">
+            <div className="flex-1">
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "#c94f32", marginBottom: 8 }}>
+                {state.phase === "ingest" ? "PROCESSING DOCUMENTS" : "ACQUISITION ANALYSIS IN PROGRESS"}
+              </div>
+              <h1 className="font-display" style={{ fontSize: 42, lineHeight: 1, color: "#1a160f" }}>
+                {state.filmTitle || "Analyzing…"}
+              </h1>
+            </div>
+            {isActive && state.phase === "crew" && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 26, fontWeight: 600, color: "#1a160f" }}>
+                  {progressPct}%
+                </div>
+                <div className="mono-label">{doneCount} OF {totalAgents} AGENTS DONE</div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: 18, height: 4, borderRadius: 99, background: "rgba(26,22,15,.08)", overflow: "hidden" }}>
+            <div
+              className="animate-fq-shimmer"
               style={{
-                background: "var(--color-card)",
-                border: "1px solid var(--color-border)",
+                width: `${Math.max(progressPct, 4)}%`,
+                height: "100%",
+                borderRadius: 99,
+                background: "linear-gradient(90deg,#c94f32,#e08662)",
+                backgroundSize: "200% 100%",
               }}
-            >
-              {/* Top glow */}
-              <div
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-[360px] h-[180px] pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(ellipse, rgba(201,168,76,0.09) 0%, transparent 68%)",
-                }}
-              />
+            />
+          </div>
+        </div>
 
-              {/* Spinner ring */}
-              <div
-                className="relative w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{
-                  background: "rgba(201,168,76,0.07)",
-                  border: "1px solid rgba(201,168,76,0.22)",
-                }}
-              >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
-                >
-                  <Loader2 size={24} className="text-gold" />
-                </motion.div>
-              </div>
+        {state.phase === "ingest" && (
+          <div className="mx-8 mb-8" style={{ fontSize: 13, color: "#5c564a" }}>{state.message}</div>
+        )}
 
-              <div className="relative">
-                <p
-                  className="font-display text-2xl mb-2"
-                  style={{ color: "var(--color-text)" }}
-                >
-                  {state.message}
-                </p>
-                <p
-                  className="text-[13px] font-sans leading-relaxed"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  {filenames.length > 1
-                    ? `Parsing, chunking, and indexing ${filenames.length} documents into vector memory`
-                    : "Parsing, chunking, embedding, and indexing your document"}
-                </p>
-              </div>
-
-              <div className="relative w-64 h-0.5 shimmer-bar rounded-full" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Agent timeline ── */}
-        <AnimatePresence>
-          {(state.phase === "crew" || isDone) && (
-            <motion.div
-              key="timeline"
-              initial={{ opacity: 0, y: 22 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring" as const, stiffness: 85, damping: 22 }}
-              className="mb-12"
-            >
-              <p
-                className="text-[9px] font-sans font-semibold uppercase tracking-[0.2em] mb-5"
-                style={{ color: "var(--color-text-dim)" }}
-              >
-                Specialist Team
-              </p>
-              <AgentTimeline agents={state.agents} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Error state ── */}
-        <AnimatePresence>
-          {isError && (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ type: "spring" as const, stiffness: 100, damping: 22 }}
-              className="rounded-2xl p-12 flex flex-col items-center gap-6 text-center"
-              style={{
-                background: "rgba(248,113,113,0.04)",
-                border: "1px solid rgba(248,113,113,0.2)",
-              }}
-            >
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{
-                  background: "rgba(248,113,113,0.09)",
-                  border: "1px solid rgba(248,113,113,0.22)",
-                }}
-              >
-                <AlertCircle size={24} style={{ color: "var(--color-error)" }} />
-              </div>
-              <div>
-                <p
-                  className="font-display text-2xl mb-2"
-                  style={{ color: "var(--color-text)" }}
-                >
-                  Analysis failed
-                </p>
-                <p
-                  className="text-[13px] font-sans max-w-sm leading-relaxed"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  {state.error}
-                </p>
-              </div>
-              <a href="/" className="btn-ghost px-5 py-2 rounded-lg text-sm font-sans mt-1">
-                Try another file
-              </a>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Report — dramatic reveal ── */}
-        <AnimatePresence>
-          {isDone && state.report && (
-            <motion.div
-              key="report"
-              initial={{ opacity: 0, y: 48 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                type: "spring" as const,
-                stiffness: 65,
-                damping: 22,
-                delay: 0.08,
-              }}
-            >
-              <ReportDisplay
-                report={state.report}
-                filmTitle={state.filmTitle}
-                bidRange={state.bidRange}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {state.phase === "crew" && (
+          <div style={{ padding: "8px 32px 32px" }}>
+            <AgentTimeline agents={state.agents} crewStartedAt={state.crewStartedAt} now={state.now} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -327,11 +140,8 @@ export default function AnalyzePage() {
   return (
     <Suspense
       fallback={
-        <div
-          className="min-h-[100dvh] flex items-center justify-center"
-          style={{ background: "var(--color-bg)" }}
-        >
-          <Loader2 size={24} className="text-gold animate-spin" />
+        <div className="flex items-center justify-center" style={{ minHeight: "100dvh", background: "#f7f3ec" }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#837b6c" }}>Loading…</span>
         </div>
       }
     >

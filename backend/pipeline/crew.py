@@ -5,6 +5,7 @@ import threading
 import time
 import traceback
 from pathlib import Path
+from urllib.parse import urlparse
 
 from .tasks import SPECIALIST_KEYS
 
@@ -22,6 +23,13 @@ _DISPLAY_NAMES = {
 # Upper bound on the parallel specialist phase; stragglers past this are
 # reported as incomplete so one wedged agent can't hang the whole job.
 _SPECIALIST_DEADLINE_SECONDS = 480.0
+
+_DEFAULT_VERDICT = "CAUTION"
+_DEFAULT_DEAL_SCORE = 50
+
+_PDF_CITATION_RE = re.compile(r"\[PDF p\.(\d+)\]")
+_WEB_CITATION_RE = re.compile(r"\[([^\]]+)\]\((https?://[^\s)]+)\)")
+_MARKDOWN_STRIP_RE = re.compile(r"[#*_`]")
 
 
 def _result_path(job_id: str) -> Path:
@@ -46,7 +54,8 @@ def _extract_bid_range(report_text: str) -> tuple[dict, str]:
 
     Tolerates code fences, leading blank lines, and unparseable JSON; always
     strips the sentinel line from the report when found. Returns
-    (bid_range, cleaned_report).
+    (bid_range, cleaned_report). Legacy fallback for when structured output
+    parsing fails — see _build_report_dict.
     """
     lines = report_text.splitlines()
     for i, line in enumerate(lines[:6]):
@@ -64,25 +73,120 @@ def _extract_bid_range(report_text: str) -> tuple[dict, str]:
     return {}, report_text
 
 
-def _parse_strategist_result(result, job_id: str) -> tuple[dict, str]:
-    """Extract (bid_range, report_text) from the strategist's CrewOutput.
+def _build_report_dict(result, job_id: str) -> dict:
+    """Extract the full report payload from the strategist's CrewOutput.
 
     Primary path: CrewAI enforced the AcquisitionReport schema
-    (`result.pydantic`), so the bid figures are never missing or malformed.
-    Fallback: `result.pydantic` can be None if the model's response couldn't
-    be coerced into the schema — in that case, fall back to the legacy
-    tolerant sentinel parser on the raw text rather than losing the report.
+    (`result.pydantic`), so every field is present and well-typed. Fallback:
+    `result.pydantic` can be None if the model's response couldn't be
+    coerced into the schema — in that case, fall back to the legacy
+    tolerant sentinel parser for the bid range and report text, and use
+    conservative defaults for the newer structured fields rather than
+    losing the report entirely.
     """
     if result.pydantic is not None:
-        bid_range = {
-            "low": result.pydantic.bid_low,
-            "fair": result.pydantic.bid_fair,
-            "walk_away": result.pydantic.bid_walk_away,
+        r = result.pydantic
+        return {
+            "genre": r.genre,
+            "director": r.director,
+            "deal_score": r.deal_score,
+            "verdict": r.verdict,
+            "thesis": r.thesis,
+            "bid_low": r.bid_low,
+            "bid_fair": r.bid_fair,
+            "bid_walk_away": r.bid_walk_away,
+            "bid_rationale": r.bid_rationale,
+            "strengths": list(r.strengths),
+            "concerns": list(r.concerns),
+            "risks": [risk.model_dump() for risk in r.risks],
+            "comparables": [comp.model_dump() for comp in r.comparables],
+            "report_markdown": r.report_markdown,
         }
-        return bid_range, result.pydantic.report_markdown
 
     logger.warning("Strategist output_pydantic parse failed for job %s; using raw fallback", job_id)
-    return _extract_bid_range(result.raw)
+    bid_range, report_text = _extract_bid_range(result.raw)
+    return {
+        "genre": "Unknown",
+        "director": "Unknown",
+        "deal_score": _DEFAULT_DEAL_SCORE,
+        "verdict": _DEFAULT_VERDICT,
+        "thesis": "",
+        "bid_low": bid_range.get("low"),
+        "bid_fair": bid_range.get("fair"),
+        "bid_walk_away": bid_range.get("walk_away"),
+        "bid_rationale": "",
+        "strengths": [],
+        "concerns": [],
+        "risks": [],
+        "comparables": [],
+        "report_markdown": report_text,
+    }
+
+
+def _extract_sources(text: str, limit: int = 6) -> list[dict]:
+    """Pull [PDF p.N] and [Name](url) citations out of a specialist's markdown
+    for the live-feed citation chips. Deliberately a regex pass over the text
+    that's already produced, not a second LLM call — this is cited data the
+    agent already wrote, not something that needs to be inferred.
+    """
+    sources: list[dict] = []
+    seen: set[str] = set()
+
+    for m in _PDF_CITATION_RE.finditer(text):
+        label = f"PDF p.{m.group(1)}"
+        if label in seen:
+            continue
+        seen.add(label)
+        sources.append({"type": "pdf", "label": label})
+        if len(sources) >= limit:
+            return sources
+
+    for m in _WEB_CITATION_RE.finditer(text):
+        name, url = m.group(1), m.group(2)
+        domain = urlparse(url).netloc.removeprefix("www.")
+        label = f"WEB · {domain.upper()}" if domain else f"WEB · {name.upper()}"
+        if label in seen:
+            continue
+        seen.add(label)
+        sources.append({"type": "web", "label": label})
+        if len(sources) >= limit:
+            break
+
+    return sources
+
+
+def _extract_finding(text: str, max_len: int = 140) -> str:
+    """Derive a one-line, citation-free summary for the live progress feed
+    from a specialist's full markdown output — the first sentence, with
+    citation markup and markdown emphasis stripped.
+    """
+    plain = _PDF_CITATION_RE.sub("", text)
+    plain = _WEB_CITATION_RE.sub(lambda m: m.group(1), plain)
+    plain = _MARKDOWN_STRIP_RE.sub("", plain)
+    # Citation removal can leave a stray space before punctuation (e.g.
+    # "strong [PDF p.4]." -> "strong .") — clean that up before splitting.
+    plain = re.sub(r"\s+([.,!?;:])", r"\1", plain)
+    plain = re.sub(r"\s{2,}", " ", plain)
+
+    first_line = ""
+    for line in plain.splitlines():
+        line = line.strip(" -•\t")
+        if line:
+            first_line = line
+            break
+    if not first_line:
+        return "Research complete."
+
+    m = re.search(r"[.!?](\s|$)", first_line)
+    sentence = first_line[: m.end()].strip() if m else first_line
+    if len(sentence) > max_len:
+        sentence = sentence[:max_len].rstrip() + "…"
+    return sentence
+
+
+def _format_elapsed(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    return f"{seconds // 60}:{seconds % 60:02d}"
 
 
 def _run_specialist(
@@ -92,6 +196,7 @@ def _run_specialist(
     emit,
     results: dict,
     lock: threading.Lock,
+    started_at: float,
 ) -> None:
     from crewai import Crew, Process
 
@@ -115,7 +220,14 @@ def _run_specialist(
         with lock:
             results[key] = "Research incomplete: a tool error prevented this research from completing."
     finally:
-        emit({"type": "agent_done", "agent": display})
+        text = results.get(key, "")
+        emit({
+            "type": "agent_done",
+            "agent": display,
+            "elapsed": _format_elapsed(time.monotonic() - started_at),
+            "finding": _extract_finding(text),
+            "sources": _extract_sources(text),
+        })
 
 
 def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Event) -> None:
@@ -123,8 +235,9 @@ def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Even
 
     Emits progress events via `emit` and checks `cancel` between phases so an
     abandoned or timed-out job stops burning LLM calls. On success the final
-    'complete' event is persisted to disk and the job's PDFs are removed; the
-    job's Qdrant collection is always dropped at the end.
+    'complete' event is persisted to disk (for reconnect replay) and to the
+    reports DB (for the Deal Room / Compare views); the job's PDFs are
+    removed and its Qdrant collection is always dropped at the end.
     """
     collection_created = False
     try:
@@ -162,11 +275,12 @@ def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Even
         # ── Phase 1: parallel specialists ────────────────────────────────
         specialist_outputs: dict[str, str] = {}
         lock = threading.Lock()
+        specialists_started_at = time.monotonic()
 
         threads = [
             threading.Thread(
                 target=_run_specialist,
-                args=(key, agents[key], specialist_tasks[key], emit, specialist_outputs, lock),
+                args=(key, agents[key], specialist_tasks[key], emit, specialist_outputs, lock, specialists_started_at),
                 daemon=True,
             )
             for key in SPECIALIST_KEYS
@@ -199,19 +313,42 @@ def run_pipeline(job_id: str, pdf_paths: list[str], emit, cancel: threading.Even
             verbose=False,
         )
         result = strategist_crew.kickoff()
-        bid_range, report_text = _parse_strategist_result(result, job_id)
+        report_dict = _build_report_dict(result, job_id)
 
         complete_event = {
             "type": "complete",
-            "report": report_text,
-            "bid_range": bid_range,
             "film_title": film_title,
+            "report": report_dict["report_markdown"],
+            "bid_range": {
+                "low": report_dict["bid_low"],
+                "fair": report_dict["bid_fair"],
+                "walk_away": report_dict["bid_walk_away"],
+            },
+            "genre": report_dict["genre"],
+            "director": report_dict["director"],
+            "deal_score": report_dict["deal_score"],
+            "verdict": report_dict["verdict"],
+            "thesis": report_dict["thesis"],
+            "bid_rationale": report_dict["bid_rationale"],
+            "strengths": report_dict["strengths"],
+            "concerns": report_dict["concerns"],
+            "risks": report_dict["risks"],
+            "comparables": report_dict["comparables"],
+            "specialist_findings": dict(specialist_outputs),
         }
         # Persist first so a refresh replays the report instead of re-running.
         try:
             _result_path(job_id).write_text(json.dumps(complete_event))
         except OSError:
             logger.warning("Failed to persist result for job %s", job_id)
+
+        try:
+            from db import save_report
+
+            save_report(job_id, film_title, complete_event)
+        except Exception:
+            logger.warning("Failed to save report %s to reports DB: %s", job_id, traceback.format_exc())
+
         emit(complete_event)
 
         # Success: the source PDFs are no longer needed.

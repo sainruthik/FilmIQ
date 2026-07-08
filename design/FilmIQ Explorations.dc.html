@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Caveat:wght@600&family=Instrument+Serif:ital@0;1&family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@keyframes fq-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fq-dot{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes fq-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes fq-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes fq-float{0%,100%{transform:rotate(1.6deg) translateY(0)}50%{transform:rotate(1.6deg) translateY(-7px)}}
+@keyframes fq-sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+</style>
+<style>
+body{margin:0;background:#f0eee9;font-family:system-ui,sans-serif}
+a{color:#8a7035}a:hover{color:#c9a84c}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+/* wireframe kit */
+.wf{font-family:'Patrick Hand',cursive;color:#2b2b2b;font-size:14px;line-height:1.35}
+.wf-h{font-family:'Caveat',cursive;font-weight:600;font-size:22px;line-height:1.1;color:#1a1a1a}
+.wf-box{border:1.5px solid #555;border-radius:6px;background:#fff}
+.wf-dash{border:1.5px dashed #999;border-radius:6px;background:repeating-linear-gradient(45deg,#fafafa 0 8px,#f1f1f1 8px 16px)}
+.wf-mut{color:#8b8b8b;font-size:12px}
+.wf-tag{display:inline-block;border:1.5px solid #555;border-radius:999px;padding:0 8px;font-size:11px;line-height:18px;background:#fff}
+.wf-gold{background:#f4e8c8;border-color:#b09040}
+.wf-bar{height:8px;border:1.5px solid #555;border-radius:999px;background:#fff;position:relative;overflow:hidden}
+.wf-note{font-family:'Caveat',cursive;font-size:15px;color:#a5701e;line-height:1.15}
+.wf-row{display:flex;align-items:center;gap:8px}
+.wf-nav{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1.5px solid #555;background:#fff}
+.wf-logo{width:18px;height:18px;border:1.5px solid #555;border-radius:4px;background:#f4e8c8}
+</style></helmet>
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Hi-fi — turn 1 taken to full fidelity · "Trade Paper" direction: warm paper, ink serif, vermillion accent, mono data</span></div>
+<div class="dv-opts">
+
+<!-- ============ 3a DEAL ROOM LEDGER ============ -->
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Deal Room — ledger table (from <a class="dv-oid" href="#1a">1a</a>)</div>
+<div class="dv-card" style="width:1150px;background:#f7f3ec;font-family:'Schibsted Grotesk',sans-serif;color:#1a160f">
+  <div style="display:flex;align-items:center;gap:16px;padding:14px 32px;border-bottom:1px solid rgba(26,22,15,.14);background:#fffdf9">
+    <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:23px">FilmIQ</span>
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.16em;color:#837b6c">DEAL ROOM</span>
+    <div style="flex:1"></div>
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#837b6c;border:1px solid rgba(26,22,15,.16);border-radius:6px;padding:6px 14px;width:200px">⌕ Search slate…</span>
+    <span style="background:#c94f32;color:#fffdf9;font-size:13px;font-weight:600;border-radius:6px;padding:8px 16px">+ New analysis</span>
+  </div>
+  <div style="padding:36px 32px 12px;display:flex;align-items:flex-end;gap:32px;animation:fq-up .6s ease both">
+    <h1 style="margin:0;font-family:'Instrument Serif',serif;font-weight:400;font-size:46px;line-height:1">Deal Room</h1>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:0">
+      <div style="padding:0 24px;border-left:1px solid rgba(26,22,15,.14)"><div style="font-family:'Spline Sans Mono',monospace;font-size:22px;font-weight:600">24</div><div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">FILMS ANALYZED</div></div>
+      <div style="padding:0 24px;border-left:1px solid rgba(26,22,15,.14)"><div style="font-family:'Spline Sans Mono',monospace;font-size:22px;font-weight:600">61</div><div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">AVG DEAL SCORE</div></div>
+      <div style="padding:0 24px;border-left:1px solid rgba(26,22,15,.14)"><div style="font-family:'Spline Sans Mono',monospace;font-size:22px;font-weight:600;color:#2f7d52">$5.1M</div><div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">FAIR-VALUE PIPELINE</div></div>
+    </div>
+  </div>
+  <div style="padding:16px 32px;display:flex;gap:8px;animation:fq-up .6s ease .08s both">
+    <span style="font-size:12px;font-weight:600;background:#1a160f;color:#fffdf9;border-radius:99px;padding:5px 14px">All · 6</span>
+    <span style="font-size:12px;color:#5c564a;border:1px solid rgba(26,22,15,.16);border-radius:99px;padding:5px 14px">Pursue · 2</span>
+    <span style="font-size:12px;color:#5c564a;border:1px solid rgba(26,22,15,.16);border-radius:99px;padding:5px 14px">Caution · 3</span>
+    <span style="font-size:12px;color:#5c564a;border:1px solid rgba(26,22,15,.16);border-radius:99px;padding:5px 14px">Pass · 1</span>
+    <div style="flex:1"></div>
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#837b6c;padding:6px 0">SORT: SCORE ↓</span>
+  </div>
+  <div style="margin:4px 32px 0;background:#fffdf9;border:1px solid rgba(26,22,15,.14);border-radius:10px;overflow:hidden;animation:fq-up .6s ease .16s both">
+    <div style="display:grid;grid-template-columns:44px 280px 110px 90px 1fr 130px 40px;gap:12px;align-items:center;padding:10px 20px;border-bottom:1px solid rgba(26,22,15,.14);background:#f2ede2">
+      <span></span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">FILM</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">ANALYZED</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">SCORE</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">BID RANGE (LOW — FAIR — WALK)</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">VERDICT</span><span></span>
+    </div>
+    <sc-for list="{{ slate }}" as="f" hint-placeholder-count="6">
+      <div style="display:grid;grid-template-columns:44px 280px 110px 90px 1fr 130px 40px;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(26,22,15,.08)" style-hover="background:#f6f1e6">
+        <input type="checkbox" checked="{{ f.sel }}" style="width:15px;height:15px;accent-color:#c94f32">
+        <div><div style="font-family:'Instrument Serif',serif;font-size:19px;line-height:1.15">{{ f.title }}</div><div style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#837b6c;margin-top:2px">{{ f.meta }}</div></div>
+        <span style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#5c564a">{{ f.date }}</span>
+        <span style="font-family:'Spline Sans Mono',monospace;font-size:17px;font-weight:600;color:{{ f.color }}">{{ f.score }}</span>
+        <div>
+          <div style="position:relative;height:6px;background:rgba(26,22,15,.08);border-radius:99px">
+            <div style="position:absolute;top:0;bottom:0;border-radius:99px;background:{{ f.color }};opacity:.75;left:{{ f.barLeft }};width:{{ f.barWidth }}"></div>
+            <div style="position:absolute;top:-3px;bottom:-3px;width:2px;background:#1a160f;left:{{ f.fairPos }}"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:'Spline Sans Mono',monospace;font-size:9px;color:#837b6c;margin-top:4px"><span>{{ f.low }}</span><span>fair {{ f.fair }}</span><span>{{ f.walk }}</span></div>
+        </div>
+        <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;color:{{ f.color }};background:{{ f.tint }};border:1px solid {{ f.color }};border-radius:4px;padding:3px 0;text-align:center">{{ f.verdict }}</span>
+        <span style="color:#b3aa99;font-size:16px">→</span>
+      </div>
+    </sc-for>
+  </div>
+  <div style="margin:14px 32px 28px;display:flex;align-items:center;gap:14px;background:#1a160f;color:#fffdf9;border-radius:10px;padding:12px 20px;animation:fq-up .6s ease .24s both">
+    <span style="width:8px;height:8px;border-radius:50%;background:#c94f32;animation:fq-dot 1.6s ease infinite"></span>
+    <span style="font-size:13px">2 films selected — <b>Midnight Harbor</b>, <b>The Cartographer's Daughter</b></span>
+    <div style="flex:1"></div>
+    <span style="font-size:12px;color:rgba(255,253,249,.55)">Clear</span>
+    <span style="background:#c94f32;color:#fffdf9;font-size:13px;font-weight:600;border-radius:6px;padding:8px 18px">Compare 2 →</span>
+  </div>
+</div>
+</div>
+
+<!-- ============ 3b DEAL ROOM POSTER GRID ============ -->
+<div class="dv-opt" id="3b">
+<div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Deal Room — poster grid + compare tray (from <a class="dv-oid" href="#1b">1b</a>)</div>
+<div class="dv-card" style="width:1150px;background:#f7f3ec;font-family:'Schibsted Grotesk',sans-serif;color:#1a160f">
+  <div style="display:flex;align-items:center;gap:16px;padding:14px 32px;border-bottom:1px solid rgba(26,22,15,.14);background:#fffdf9">
+    <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:23px">FilmIQ</span>
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.16em;color:#837b6c">YOUR SLATE</span>
+    <div style="flex:1"></div>
+    <div style="display:flex;border:1px solid rgba(26,22,15,.16);border-radius:6px;overflow:hidden;font-size:12px"><span style="padding:6px 14px;background:#1a160f;color:#fffdf9">Grid</span><span style="padding:6px 14px;color:#5c564a">Table</span></div>
+    <span style="background:#c94f32;color:#fffdf9;font-size:13px;font-weight:600;border-radius:6px;padding:8px 16px">+ New analysis</span>
+  </div>
+  <div style="padding:36px 32px 8px;animation:fq-up .6s ease both">
+    <h1 style="margin:0;font-family:'Instrument Serif',serif;font-weight:400;font-size:46px;line-height:1">Your slate</h1>
+    <p style="margin:8px 0 0;font-size:14px;color:#837b6c">Six films under evaluation · sorted by deal score</p>
+  </div>
+  <div style="padding:24px 32px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+    <sc-for list="{{ slate }}" as="f" hint-placeholder-count="6">
+      <div style="background:#fffdf9;border:1px solid rgba(26,22,15,.14);border-radius:12px;overflow:hidden;animation:fq-up .6s ease both;animation-delay:{{ f.delay }}" style-hover="transform:translateY(-4px);box-shadow:0 12px 28px rgba(26,22,15,.12)">
+        <div style="position:relative;height:190px;background:{{ f.art }};display:flex;align-items:center;justify-content:center">
+          <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:92px;color:rgba(255,253,249,.28);line-height:1">{{ f.initial }}</span>
+          <span style="position:absolute;top:12px;left:12px;font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(255,253,249,.85);border:1px solid rgba(255,253,249,.4);border-radius:4px;padding:2px 8px">{{ f.genreTag }}</span>
+          <span style="position:absolute;top:12px;right:12px;font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;color:#fffdf9;background:{{ f.color }};border-radius:4px;padding:3px 8px">{{ f.verdict }}</span>
+        </div>
+        <div style="padding:16px 18px 18px">
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:'Instrument Serif',serif;font-size:22px;line-height:1.1;flex:1">{{ f.title }}</span><span style="font-family:'Spline Sans Mono',monospace;font-size:20px;font-weight:600;color:{{ f.color }}">{{ f.score }}</span></div>
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#837b6c;margin:4px 0 12px">{{ f.meta }}</div>
+          <div style="position:relative;height:5px;background:rgba(26,22,15,.08);border-radius:99px"><div style="position:absolute;top:0;bottom:0;border-radius:99px;background:{{ f.color }};opacity:.75;left:{{ f.barLeft }};width:{{ f.barWidth }}"></div></div>
+          <div style="display:flex;justify-content:space-between;font-family:'Spline Sans Mono',monospace;font-size:9px;color:#837b6c;margin-top:5px"><span>{{ f.low }}</span><span>{{ f.walk }}</span></div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="margin:6px 32px 28px;display:flex;align-items:center;gap:12px;background:#fffdf9;border:1px solid #1a160f;border-radius:10px;padding:12px 20px;box-shadow:0 8px 24px rgba(26,22,15,.12)">
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">COMPARE TRAY</span>
+    <span style="font-size:12px;border:1px solid rgba(26,22,15,.2);border-radius:99px;padding:4px 12px">Midnight Harbor ✕</span>
+    <span style="font-size:12px;border:1px solid rgba(26,22,15,.2);border-radius:99px;padding:4px 12px">Glass Orchard ✕</span>
+    <span style="font-size:12px;color:#b3aa99;border:1px dashed rgba(26,22,15,.25);border-radius:99px;padding:4px 12px">+ add a third</span>
+    <div style="flex:1"></div>
+    <span style="background:#1a160f;color:#fffdf9;font-size:13px;font-weight:600;border-radius:6px;padding:8px 18px">Compare 2 →</span>
+  </div>
+</div>
+</div>
+
+<!-- ============ 3c COMPARE ============ -->
+<div class="dv-opt" id="3c">
+<div class="dv-olabel"><a class="dv-oid" href="#3c">3c</a>Compare — head-to-head with winner marks (from <a class="dv-oid" href="#1c">1c</a>)</div>
+<div class="dv-card" style="width:1150px;background:#f7f3ec;font-family:'Schibsted Grotesk',sans-serif;color:#1a160f">
+  <div style="display:flex;align-items:center;gap:16px;padding:14px 32px;border-bottom:1px solid rgba(26,22,15,.14);background:#fffdf9">
+    <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:23px">FilmIQ</span>
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.16em;color:#837b6c">DEAL ROOM / COMPARE</span>
+    <div style="flex:1"></div>
+    <span style="font-size:12px;color:#5c564a;border:1px solid rgba(26,22,15,.16);border-radius:6px;padding:6px 14px">+ Add film</span>
+    <span style="font-size:12px;color:#5c564a;border:1px solid rgba(26,22,15,.16);border-radius:6px;padding:6px 14px">Export ⤓</span>
+  </div>
+  <div style="padding:36px 32px 20px;animation:fq-up .6s ease both">
+    <h1 style="margin:0;font-family:'Instrument Serif',serif;font-weight:400;font-size:46px;line-height:1">Head to head</h1>
+    <p style="margin:8px 0 0;font-size:14px;color:#837b6c">Three films · shared bid scale $0 – $2.0M · ★ marks the stronger position per row</p>
+  </div>
+  <div style="margin:0 32px;display:grid;grid-template-columns:170px 1fr 1fr 1fr;gap:1px;background:rgba(26,22,15,.12);border:1px solid rgba(26,22,15,.14);border-radius:12px;overflow:hidden;animation:fq-up .6s ease .1s both">
+    <div style="background:#f2ede2;padding:18px"></div>
+    <div style="background:#fffdf9;padding:18px;border-top:3px solid #2f7d52"><div style="height:44px;border-radius:6px;background:linear-gradient(165deg,#0e2233,#3a5a74);display:flex;align-items:center;justify-content:center;margin-bottom:10px"><span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:26px;color:rgba(255,253,249,.5)">M</span></div><div style="font-family:'Instrument Serif',serif;font-size:21px">Midnight Harbor</div><div style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#837b6c">NEO-NOIR THRILLER · L. OKAFOR</div></div>
+    <div style="background:#fffdf9;padding:18px"><div style="height:44px;border-radius:6px;background:linear-gradient(165deg,#4a3120,#8a6a45);display:flex;align-items:center;justify-content:center;margin-bottom:10px"><span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:26px;color:rgba(255,253,249,.5)">C</span></div><div style="font-family:'Instrument Serif',serif;font-size:21px">The Cartographer's Daughter</div><div style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#837b6c">PERIOD DRAMA · M. SERRANO</div></div>
+    <div style="background:#fffdf9;padding:18px"><div style="height:44px;border-radius:6px;background:linear-gradient(165deg,#22301c,#54683f);display:flex;align-items:center;justify-content:center;margin-bottom:10px"><span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:26px;color:rgba(255,253,249,.5)">G</span></div><div style="font-family:'Instrument Serif',serif;font-size:21px">Glass Orchard</div><div style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#837b6c">FOLK HORROR · A. LINDQVIST</div></div>
+    <sc-for list="{{ compareRows }}" as="r" hint-placeholder-count="6">
+      <div style="background:#f2ede2;padding:14px 18px;font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.12em;color:#837b6c;display:flex;align-items:center">{{ r.label }}</div>
+      <div style="background:#fffdf9;padding:14px 18px;font-size:13.5px;box-shadow:{{ r.w1 }}">{{ r.c1 }}<span style="color:#2f7d52;font-weight:700"> {{ r.s1 }}</span></div>
+      <div style="background:#fffdf9;padding:14px 18px;font-size:13.5px;box-shadow:{{ r.w2 }}">{{ r.c2 }}<span style="color:#2f7d52;font-weight:700"> {{ r.s2 }}</span></div>
+      <div style="background:#fffdf9;padding:14px 18px;font-size:13.5px;box-shadow:{{ r.w3 }}">{{ r.c3 }}<span style="color:#2f7d52;font-weight:700"> {{ r.s3 }}</span></div>
+    </sc-for>
+    <div style="background:#f2ede2;padding:14px 18px;font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.12em;color:#837b6c;display:flex;align-items:center">BID RANGE</div>
+    <div style="background:#fffdf9;padding:18px"><div style="position:relative;height:8px;background:rgba(26,22,15,.08);border-radius:99px"><div style="position:absolute;top:0;bottom:0;left:25%;width:35%;border-radius:99px;background:#2f7d52;opacity:.75"></div><div style="position:absolute;top:-3px;bottom:-3px;width:2px;background:#1a160f;left:42%"></div></div><div style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#5c564a;margin-top:6px">$500K — <b>$850K</b> — $1.2M</div></div>
+    <div style="background:#fffdf9;padding:18px"><div style="position:relative;height:8px;background:rgba(26,22,15,.08);border-radius:99px"><div style="position:absolute;top:0;bottom:0;left:40%;width:40%;border-radius:99px;background:#2f7d52;opacity:.75"></div><div style="position:absolute;top:-3px;bottom:-3px;width:2px;background:#1a160f;left:57%"></div></div><div style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#5c564a;margin-top:6px">$800K — <b>$1.15M</b> — $1.6M</div></div>
+    <div style="background:#fffdf9;padding:18px"><div style="position:relative;height:8px;background:rgba(26,22,15,.08);border-radius:99px"><div style="position:absolute;top:0;bottom:0;left:20%;width:25%;border-radius:99px;background:#a97a1c;opacity:.75"></div><div style="position:absolute;top:-3px;bottom:-3px;width:2px;background:#1a160f;left:31%"></div></div><div style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#5c564a;margin-top:6px">$400K — <b>$620K</b> — $900K</div></div>
+  </div>
+  <div style="margin:18px 32px 28px;display:flex;gap:16px;align-items:flex-start;background:#1a160f;color:#fffdf9;border-radius:12px;padding:20px 24px;animation:fq-up .6s ease .2s both">
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.16em;color:#c94f32;padding-top:5px;flex:none">STRATEGIST VERDICT</span>
+    <p style="margin:0;font-family:'Instrument Serif',serif;font-size:19px;line-height:1.45;font-style:italic;color:rgba(255,253,249,.92)">"Midnight Harbor is the cleanest buy — proven director, TIFF heat, and the widest gap between fair value and walk-away. Cartographer's Daughter justifies its premium only for a buyer needing prestige. Glass Orchard is a genre flyer: bid low or pass."</p>
+  </div>
+</div>
+</div>
+
+<!-- ============ 3d REPORT ============ -->
+<div class="dv-opt" id="3d">
+<div class="dv-olabel"><a class="dv-oid" href="#3d">3d</a>Report — verdict rail + tabs + risk matrix (from <a class="dv-oid" href="#1d">1d</a>)</div>
+<div class="dv-card" style="width:1150px;background:#f7f3ec;font-family:'Schibsted Grotesk',sans-serif;color:#1a160f">
+  <div style="display:flex;align-items:center;gap:16px;padding:14px 32px;border-bottom:1px solid rgba(26,22,15,.14);background:#fffdf9">
+    <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:23px">FilmIQ</span>
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.16em;color:#837b6c">REPORT / MIDNIGHT HARBOR</span>
+    <div style="flex:1"></div>
+    <span style="display:flex;align-items:center;gap:6px;font-family:'Spline Sans Mono',monospace;font-size:10px;color:#2f7d52"><span style="width:7px;height:7px;border-radius:50%;background:#2f7d52"></span>ANALYSIS COMPLETE · 4M 12S</span>
+    <span style="background:#1a160f;color:#fffdf9;font-size:13px;font-weight:600;border-radius:6px;padding:8px 16px">Export memo ⤓</span>
+  </div>
+  <div style="padding:36px 32px 24px;border-bottom:1px solid rgba(26,22,15,.14);animation:fq-up .6s ease both">
+    <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.2em;color:#c94f32;margin-bottom:10px">ACQUISITION REPORT · NO. 0247</div>
+    <h1 style="margin:0;font-family:'Instrument Serif',serif;font-weight:400;font-size:56px;line-height:1">Midnight Harbor</h1>
+    <p style="margin:10px 0 0;font-family:'Spline Sans Mono',monospace;font-size:11px;color:#837b6c">NEO-NOIR THRILLER · DIR. LENA OKAFOR · 104 MIN · TIFF MIDNIGHT MADNESS 2026 · 3 DOCUMENTS · 46 SOURCES CITED</p>
+  </div>
+  <div style="display:flex;gap:28px;padding:28px 32px 32px">
+    <div style="width:280px;flex:none;display:flex;flex-direction:column;gap:18px;animation:fq-up .6s ease .1s both">
+      <div style="background:#fffdf9;border:1px solid rgba(26,22,15,.14);border-radius:12px;padding:24px;text-align:center">
+        <div style="width:132px;height:132px;border-radius:50%;margin:0 auto;background:conic-gradient(#2f7d52 0 295deg,rgba(26,22,15,.08) 295deg 360deg);display:flex;align-items:center;justify-content:center">
+          <div style="width:106px;height:106px;border-radius:50%;background:#fffdf9;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <span style="font-family:'Spline Sans Mono',monospace;font-size:38px;font-weight:600;line-height:1">82</span>
+            <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">DEAL SCORE</span>
+          </div>
+        </div>
+        <div style="margin-top:16px;font-family:'Spline Sans Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.16em;color:#fffdf9;background:#2f7d52;border-radius:6px;padding:8px 0">VERDICT: PURSUE</div>
+        <div style="margin-top:8px;font-family:'Spline Sans Mono',monospace;font-size:9px;color:#837b6c">CONFIDENCE HIGH · 6/6 AGENTS AGREE</div>
+      </div>
+      <div style="background:#fffdf9;border:1px solid rgba(26,22,15,.14);border-radius:12px;padding:20px">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.16em;color:#837b6c;margin-bottom:14px">BID GUIDANCE</div>
+        <div style="position:relative;height:10px;border-radius:99px;overflow:visible;background:linear-gradient(90deg,rgba(26,22,15,.08) 0 18%,rgba(47,125,82,.35) 18% 48%,rgba(169,122,28,.35) 48% 78%,rgba(201,79,50,.35) 78% 100%)">
+          <div style="position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:#1a160f;left:48%"></div>
+          <div style="position:absolute;top:-7px;width:16px;height:24px;left:calc(48% - 7px);border-radius:4px;background:rgba(26,22,15,.12);animation:fq-dot 2s ease infinite"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:12px">
+          <div><div style="font-family:'Spline Sans Mono',monospace;font-size:13px;font-weight:600">$500K</div><div style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:.12em;color:#837b6c">OPENING</div></div>
+          <div style="text-align:center"><div style="font-family:'Spline Sans Mono',monospace;font-size:13px;font-weight:600;color:#2f7d52">$850K</div><div style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:.12em;color:#837b6c">FAIR VALUE</div></div>
+          <div style="text-align:right"><div style="font-family:'Spline Sans Mono',monospace;font-size:13px;font-weight:600;color:#c94f32">$1.2M</div><div style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:.12em;color:#837b6c">WALK-AWAY</div></div>
+        </div>
+      </div>
+      <div style="background:#1a160f;color:#fffdf9;border-radius:12px;padding:18px 20px">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.16em;color:#c94f32;margin-bottom:8px">ONE-LINE THESIS</div>
+        <p style="margin:0;font-family:'Instrument Serif',serif;font-style:italic;font-size:16px;line-height:1.5;color:rgba(255,253,249,.92)">"A festival-proven director delivering elevated genre at an indie price — the comps say $850K is a bargain."</p>
+      </div>
+    </div>
+    <div style="flex:1;min-width:0;animation:fq-up .6s ease .18s both">
+      <div style="display:flex;gap:26px;border-bottom:1px solid rgba(26,22,15,.14);margin-bottom:22px">
+        <span style="font-size:13px;font-weight:600;padding:0 2px 12px;border-bottom:2px solid #c94f32">Summary</span>
+        <span style="font-size:13px;color:#837b6c;padding:0 2px 12px">Talent</span>
+        <span style="font-size:13px;color:#837b6c;padding:0 2px 12px">Market</span>
+        <span style="font-size:13px;color:#837b6c;padding:0 2px 12px">Deals</span>
+        <span style="font-size:13px;color:#837b6c;padding:0 2px 12px">Risks</span>
+        <span style="font-size:13px;color:#837b6c;padding:0 2px 12px">Bid rationale</span>
+      </div>
+      <p style="margin:0 0 10px;font-size:14.5px;line-height:1.75;color:#3a352b">Midnight Harbor is a $2.1M neo-noir thriller premiering in TIFF's Midnight Madness section. Director Lena Okafor's previous feature returned 4.2× its budget across streaming and theatrical <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;color:#c94f32;border:1px solid rgba(201,79,50,.4);border-radius:3px;padding:1px 6px;white-space:nowrap">PDF P.3</span>, and the finished film carries an 88% positive early-critic sentiment <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;color:#5878a0;border:1px solid rgba(88,120,160,.4);border-radius:3px;padding:1px 6px;white-space:nowrap">WEB</span>.</p>
+      <p style="margin:0 0 22px;font-size:14.5px;line-height:1.75;color:#3a352b">Comparable acquisitions in the last 18 months cleared $600K–$1.4M for similar festival genre titles <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;color:#5878a0;border:1px solid rgba(88,120,160,.4);border-radius:3px;padding:1px 6px;white-space:nowrap">WEB</span>. Chain-of-title has one unresolved music clearance flagged in the press kit <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;color:#c94f32;border:1px solid rgba(201,79,50,.4);border-radius:3px;padding:1px 6px;white-space:nowrap">PDF P.11</span> — priced into the walk-away ceiling.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
+        <div style="background:#fffdf9;border:1px solid rgba(26,22,15,.14);border-left:3px solid #2f7d52;border-radius:8px;padding:16px 18px">
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.16em;color:#2f7d52;margin-bottom:10px">STRENGTHS</div>
+          <div style="font-size:13px;line-height:2;color:#3a352b">Director's 4.2× ROI track record<br>TIFF Midnight Madness slot secured<br>Finished film — no completion risk<br>Genre outperforms on streamers</div>
+        </div>
+        <div style="background:#fffdf9;border:1px solid rgba(26,22,15,.14);border-left:3px solid #c94f32;border-radius:8px;padding:16px 18px">
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.16em;color:#c94f32;margin-bottom:10px">CONCERNS</div>
+          <div style="font-size:13px;line-height:2;color:#3a352b">One unresolved music clearance<br>No recognizable cast for marketing<br>Crowded Q4 thriller pipeline<br>Seller expectations anchored high</div>
+        </div>
+      </div>
+      <div style="background:#fffdf9;border:1px solid rgba(26,22,15,.14);border-radius:8px;padding:18px 20px;margin-bottom:22px">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px"><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.16em;color:#837b6c">RISK MATRIX</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;color:#b3aa99">SEVERITY ↑ · LIKELIHOOD →</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          <div style="height:52px;border-radius:6px;background:rgba(26,22,15,.04)"></div>
+          <div style="height:52px;border-radius:6px;background:rgba(169,122,28,.14);border:1px solid rgba(169,122,28,.4);padding:8px 10px;font-size:11.5px;font-weight:600;color:#7d5a12">Music clearance</div>
+          <div style="height:52px;border-radius:6px;background:rgba(201,79,50,.14);border:1px solid rgba(201,79,50,.45);padding:8px 10px;font-size:11.5px;font-weight:600;color:#8f3520">Seller overprice</div>
+          <div style="height:52px;border-radius:6px;background:rgba(26,22,15,.04)"></div>
+          <div style="height:52px;border-radius:6px;background:rgba(169,122,28,.1);border:1px solid rgba(169,122,28,.3);padding:8px 10px;font-size:11.5px;color:#7d5a12">Q4 congestion</div>
+          <div style="height:52px;border-radius:6px;background:rgba(26,22,15,.04)"></div>
+          <div style="height:52px;border-radius:6px;background:rgba(47,125,82,.1);border:1px solid rgba(47,125,82,.3);padding:8px 10px;font-size:11.5px;color:#1f5c3a">Delivery delay</div>
+          <div style="height:52px;border-radius:6px;background:rgba(26,22,15,.04)"></div>
+          <div style="height:52px;border-radius:6px;background:rgba(26,22,15,.04)"></div>
+        </div>
+      </div>
+      <div style="background:#fffdf9;border:1px solid rgba(26,22,15,.14);border-radius:8px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:10px 18px;background:#f2ede2;border-bottom:1px solid rgba(26,22,15,.14)">
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">COMPARABLE</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">BUYER</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">YEAR</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c;text-align:right">PRICE</span>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:12px 18px;border-bottom:1px solid rgba(26,22,15,.08);font-size:13px"><span style="font-family:'Instrument Serif',serif;font-size:15px">Coastal Noir</span><span style="color:#5c564a">Netflix</span><span style="color:#5c564a">2025</span><span style="font-family:'Spline Sans Mono',monospace;font-weight:600;text-align:right">$1.4M</span></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:12px 18px;border-bottom:1px solid rgba(26,22,15,.08);font-size:13px"><span style="font-family:'Instrument Serif',serif;font-size:15px">Harbor Lights</span><span style="color:#5c564a">Hulu</span><span style="color:#5c564a">2024</span><span style="font-family:'Spline Sans Mono',monospace;font-weight:600;text-align:right">$950K</span></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:12px 18px;font-size:13px"><span style="font-family:'Instrument Serif',serif;font-size:15px">The Long Ferry</span><span style="color:#5c564a">MUBI</span><span style="color:#5c564a">2024</span><span style="font-family:'Spline Sans Mono',monospace;font-weight:600;text-align:right">$600K</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ 3e ANALYSIS FEED ============ -->
+<div class="dv-opt" id="3e">
+<div class="dv-olabel"><a class="dv-oid" href="#3e">3e</a>Analysis — live agent feed (from <a class="dv-oid" href="#1e">1e</a>)</div>
+<div class="dv-card" style="width:860px;background:#f7f3ec;font-family:'Schibsted Grotesk',sans-serif;color:#1a160f">
+  <div style="display:flex;align-items:center;gap:16px;padding:14px 32px;border-bottom:1px solid rgba(26,22,15,.14);background:#fffdf9">
+    <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:23px">FilmIQ</span>
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.16em;color:#837b6c">ANALYZING</span>
+    <div style="flex:1"></div>
+    <span style="display:flex;align-items:center;gap:7px;font-family:'Spline Sans Mono',monospace;font-size:10px;color:#c94f32"><span style="width:7px;height:7px;border-radius:50%;background:#c94f32;animation:fq-dot 1.2s ease infinite"></span>LIVE</span>
+  </div>
+  <div style="padding:32px 32px 20px;animation:fq-up .6s ease both">
+    <div style="display:flex;align-items:flex-end;gap:20px">
+      <div style="flex:1"><div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.2em;color:#c94f32;margin-bottom:8px">ACQUISITION ANALYSIS IN PROGRESS</div><h1 style="margin:0;font-family:'Instrument Serif',serif;font-weight:400;font-size:42px;line-height:1">Midnight Harbor</h1></div>
+      <div style="text-align:right"><div style="font-family:'Spline Sans Mono',monospace;font-size:26px;font-weight:600">58%</div><div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">4 OF 7 AGENTS DONE</div></div>
+    </div>
+    <div style="margin-top:18px;height:4px;border-radius:99px;background:rgba(26,22,15,.08);overflow:hidden"><div style="width:58%;height:100%;border-radius:99px;background:linear-gradient(90deg,#c94f32,#e08662);background-size:200% 100%;animation:fq-shimmer 2.2s linear infinite"></div></div>
+  </div>
+  <div style="padding:8px 32px 32px;display:flex;flex-direction:column">
+    <sc-for list="{{ feedDone }}" as="a" hint-placeholder-count="3">
+      <div style="display:flex;gap:16px;animation:fq-up .5s ease both">
+        <div style="width:26px;flex:none;display:flex;flex-direction:column;align-items:center"><span style="width:22px;height:22px;border-radius:50%;background:rgba(47,125,82,.12);border:1.5px solid #2f7d52;color:#2f7d52;font-size:11px;display:flex;align-items:center;justify-content:center">✓</span><span style="flex:1;width:1.5px;background:rgba(26,22,15,.15);margin:4px 0"></span></div>
+        <div style="flex:1;padding:0 0 18px">
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:14px;font-weight:600">{{ a.name }}</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.12em;color:#2f7d52">DONE · {{ a.time }}</span></div>
+          <div style="margin-top:4px;font-size:13px;line-height:1.6;color:#5c564a">{{ a.finding }}</div>
+        </div>
+      </div>
+    </sc-for>
+    <div style="display:flex;gap:16px;animation:fq-up .5s ease both">
+      <div style="width:26px;flex:none;display:flex;flex-direction:column;align-items:center"><span style="width:22px;height:22px;border-radius:50%;background:#c94f32;color:#fffdf9;font-size:10px;display:flex;align-items:center;justify-content:center;animation:fq-dot 1.4s ease infinite">●</span><span style="flex:1;width:1.5px;background:rgba(26,22,15,.15);margin:4px 0"></span></div>
+      <div style="flex:1;padding:0 0 18px">
+        <div style="background:#fffdf9;border:1px solid #c94f32;border-radius:10px;padding:16px 20px;box-shadow:0 6px 20px rgba(201,79,50,.1)">
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:15px;font-weight:600">Deals Researcher</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.12em;color:#c94f32">WORKING · 0:42</span></div>
+          <div style="margin-top:10px;font-family:'Spline Sans Mono',monospace;font-size:12.5px;line-height:1.7;color:#3a352b">Cross-referencing 14 festival acquisition deals 2024–26… <i>Coastal Noir</i> sold to Netflix for $1.4M after Midnight Madness premiere<span style="display:inline-block;width:8px;height:14px;background:#c94f32;vertical-align:-2px;margin-left:2px;animation:fq-blink 1s step-end infinite"></span></div>
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;color:#5878a0;border:1px solid rgba(88,120,160,.4);border-radius:3px;padding:2px 7px">WEB · DEADLINE.COM</span>
+            <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;color:#c94f32;border:1px solid rgba(201,79,50,.4);border-radius:3px;padding:2px 7px">PDF P.12</span>
+            <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;font-weight:600;color:#5878a0;border:1px solid rgba(88,120,160,.4);border-radius:3px;padding:2px 7px">WEB · VARIETY</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <sc-for list="{{ feedWaiting }}" as="a" hint-placeholder-count="3">
+      <div style="display:flex;gap:16px">
+        <div style="width:26px;flex:none;display:flex;flex-direction:column;align-items:center"><span style="width:22px;height:22px;border-radius:50%;border:1.5px dashed rgba(26,22,15,.3)"></span><span style="flex:1;width:1.5px;background:rgba(26,22,15,.08);margin:4px 0"></span></div>
+        <div style="flex:1;padding:2px 0 18px"><span style="font-size:14px;color:#b3aa99">{{ a.name }}</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.12em;color:#b3aa99;margin-left:10px">QUEUED</span></div>
+      </div>
+    </sc-for>
+    <div style="margin-left:42px;font-family:'Spline Sans Mono',monospace;font-size:10px;color:#837b6c">→ Report assembles automatically when the Strategist completes</div>
+  </div>
+</div>
+</div>
+
+<!-- ============ 3f LANDING ============ -->
+<div class="dv-opt" id="3f">
+<div class="dv-olabel"><a class="dv-oid" href="#3f">3f</a>Landing — hero + upload + live sample teaser (from <a class="dv-oid" href="#1f">1f</a>)</div>
+<div class="dv-card" style="width:1150px;background:#f7f3ec;font-family:'Schibsted Grotesk',sans-serif;color:#1a160f;position:relative;overflow:hidden">
+  <div style="position:absolute;left:0;top:0;bottom:0;width:14px;background:repeating-linear-gradient(180deg,transparent 0 16px,rgba(201,79,50,.18) 16px 24px)"></div>
+  <div style="position:absolute;right:0;top:0;bottom:0;width:14px;background:repeating-linear-gradient(180deg,transparent 0 16px,rgba(201,79,50,.18) 16px 24px)"></div>
+  <div style="display:flex;align-items:center;gap:16px;padding:14px 44px;border-bottom:1px solid rgba(26,22,15,.14);background:#fffdf9">
+    <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:23px">FilmIQ</span>
+    <div style="flex:1"></div>
+    <span style="font-size:13px;color:#5c564a">How it works</span>
+    <span style="font-size:13px;color:#5c564a">Deal Room</span>
+    <span style="background:#c94f32;color:#fffdf9;font-size:13px;font-weight:600;border-radius:6px;padding:8px 16px">New analysis</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1.05fr 1fr;gap:48px;padding:64px 60px 56px;align-items:center">
+    <div style="animation:fq-up .7s ease both">
+      <div style="display:inline-flex;align-items:center;gap:8px;font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.18em;color:#c94f32;border:1px solid rgba(201,79,50,.4);border-radius:99px;padding:6px 14px;margin-bottom:26px"><span style="width:6px;height:6px;border-radius:50%;background:#c94f32;animation:fq-dot 1.6s ease infinite"></span>AI ACQUISITION INTELLIGENCE</div>
+      <h1 style="margin:0;font-family:'Instrument Serif',serif;font-weight:400;font-size:64px;line-height:1.04;letter-spacing:-.01em">Know what a film is worth — <em style="color:#c94f32">in minutes.</em></h1>
+      <p style="margin:22px 0 0;font-size:16px;line-height:1.7;color:#5c564a;max-width:440px">Upload a script, press kit, or lookbook. Seven specialist AI agents return a cited acquisition report with a three-tier bid range.</p>
+      <div style="display:flex;gap:36px;margin-top:36px">
+        <div><div style="font-family:'Spline Sans Mono',monospace;font-size:24px;font-weight:600">7</div><div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">SPECIALIST AGENTS</div></div>
+        <div style="border-left:1px solid rgba(26,22,15,.14);padding-left:36px"><div style="font-family:'Spline Sans Mono',monospace;font-size:24px;font-weight:600">&lt;5m</div><div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">TO FULL REPORT</div></div>
+        <div style="border-left:1px solid rgba(26,22,15,.14);padding-left:36px"><div style="font-family:'Spline Sans Mono',monospace;font-size:24px;font-weight:600">46</div><div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">SOURCES PER REPORT</div></div>
+      </div>
+    </div>
+    <div style="position:relative;animation:fq-up .7s ease .15s both">
+      <div style="position:absolute;top:-34px;right:-8px;width:230px;background:#fffdf9;border:1px solid rgba(26,22,15,.16);border-radius:10px;padding:16px 18px;box-shadow:0 14px 34px rgba(26,22,15,.14);animation:fq-float 5s ease-in-out infinite;z-index:2">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:.16em;color:#c94f32;margin-bottom:6px">SAMPLE REPORT · LIVE</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:18px">Midnight Harbor</div>
+        <div style="display:flex;gap:6px;margin:8px 0 10px"><span style="font-family:'Spline Sans Mono',monospace;font-size:14px;font-weight:600;color:#2f7d52">82</span><span style="font-family:'Spline Sans Mono',monospace;font-size:8px;font-weight:600;letter-spacing:.12em;color:#fffdf9;background:#2f7d52;border-radius:3px;padding:3px 7px">PURSUE</span></div>
+        <div style="position:relative;height:5px;background:rgba(26,22,15,.08);border-radius:99px"><div style="position:absolute;top:0;bottom:0;left:22%;width:40%;border-radius:99px;background:#2f7d52;opacity:.75"></div><div style="position:absolute;top:-2px;bottom:-2px;width:2px;background:#1a160f;left:42%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-family:'Spline Sans Mono',monospace;font-size:8px;color:#837b6c;margin-top:4px"><span>$500K</span><span>$850K</span><span>$1.2M</span></div>
+      </div>
+      <div style="background:#fffdf9;border:2px dashed rgba(201,79,50,.45);border-radius:14px;padding:52px 36px 40px;text-align:center;margin-top:26px" style-hover="border-color:#c94f32;box-shadow:0 0 0 6px rgba(201,79,50,.06)">
+        <div style="width:56px;height:56px;border-radius:12px;background:rgba(201,79,50,.08);border:1px solid rgba(201,79,50,.3);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#c94f32">⤒</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:24px">Drop film documents here</div>
+        <div style="font-size:13px;color:#837b6c;margin:8px 0 20px">Press kits · Scripts · Financial summaries · Pitch decks</div>
+        <span style="display:inline-block;background:#c94f32;color:#fffdf9;font-size:14px;font-weight:600;border-radius:8px;padding:12px 28px">Choose PDFs</span>
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.1em;color:#b3aa99;margin-top:18px">PDF ONLY · MAX 50MB · MULTIPLE FILES · NO SIGNUP</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 44px;border-top:1px solid rgba(26,22,15,.14);background:#fffdf9">
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.14em;color:#837b6c">THE TEAM:</span>
+    <span style="font-size:11.5px;color:#5c564a">Document Analyst · Talent Researcher · Market Analyst · Deals Researcher · Buzz Analyst · Risk Analyst · <b style="color:#1a160f">Acquisitions Strategist</b></span>
+    <div style="flex:1"></div>
+    <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;color:#b3aa99">CITED SOURCES IN EVERY REPORT</span>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "make it a clickable flow" · "try a dark visual variant of <a class="dv-oid" href="#3d">3d</a>" · "wire <a class="dv-oid" href="#3f">3f</a>'s CTA into the presentation page from <a class="dv-oid" href="#2a">2a</a>"</p>
+</section>
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Presentation page ("front door") — CTA leads to the current landing/upload page</span></div>
+<div class="dv-opts">
+
+<!-- 2a Cinematic one-pager -->
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Cinematic one-pager — trailer-style hero, scroll story, big CTA</div>
+<div class="dv-card wf" style="width:380px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>FilmIQ</b><span style="flex:1"></span><span class="wf-tag wf-gold">Try the app →</span></div>
+  <div style="padding:0 0 12px;display:flex;flex-direction:column;gap:10px">
+    <div style="background:#2b2b2b;color:#fff;padding:26px 16px;text-align:center;position:relative">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:8px;background:repeating-linear-gradient(180deg,transparent 0 6px,#b09040 6px 10px);opacity:.5"></div>
+      <div style="position:absolute;right:0;top:0;bottom:0;width:8px;background:repeating-linear-gradient(180deg,transparent 0 6px,#b09040 6px 10px);opacity:.5"></div>
+      <span class="wf-h" style="color:#fff;font-size:28px">Every film has a price.<br>We find it.</span>
+      <div class="wf-mut" style="color:#bbb;font-size:11px;margin:6px 0">AI acquisition intelligence for investors &amp; OTT buyers</div>
+      <span class="wf-tag wf-gold" style="font-size:13px;padding:2px 14px">▶ Try the app</span>
+      <div class="wf-note" style="font-size:12px;color:#d8c07a">full-viewport dark hero, subtle film grain</div>
+    </div>
+    <div style="padding:0 16px;display:flex;flex-direction:column;gap:8px">
+      <div class="wf-row" style="gap:8px"><div class="wf-box" style="flex:1;padding:6px;text-align:center"><b>7</b><div class="wf-mut" style="font-size:9px">agents</div></div><div class="wf-box" style="flex:1;padding:6px;text-align:center"><b>&lt;5m</b><div class="wf-mut" style="font-size:9px">to report</div></div><div class="wf-box" style="flex:1;padding:6px;text-align:center"><b>3-tier</b><div class="wf-mut" style="font-size:9px">bid range</div></div></div>
+      <div class="wf-box" style="padding:8px"><b style="font-size:12px">Scroll: Upload → Agents work → Report</b><div class="wf-mut" style="font-size:11px">3 sections, each with an app screenshot placeholder</div><div class="wf-dash" style="height:46px;margin-top:4px;display:flex;align-items:center;justify-content:center"><span class="wf-mut" style="font-family:monospace;font-size:9px">app screenshot</span></div></div>
+      <div class="wf-box wf-gold" style="padding:10px;text-align:center"><b>Ready to price your next film?</b><br><span class="wf-tag" style="margin-top:4px">Try the app → /upload</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 2b Product tour -->
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Guided product tour — sticky app frames, step-by-step narrative</div>
+<div class="dv-card wf" style="width:380px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>FilmIQ</b><span style="flex:1"></span><span class="wf-mut" style="font-size:10px">How it works · Team · </span><span class="wf-tag wf-gold">Try it →</span></div>
+  <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+    <span class="wf-h">See a deal analyzed, start to finish.</span>
+    <div style="display:flex;gap:10px">
+      <div style="width:90px;display:flex;flex-direction:column;gap:6px">
+        <div class="wf-box wf-gold" style="padding:4px 6px;font-size:11px"><b>1. Upload</b></div>
+        <div class="wf-box" style="padding:4px 6px;font-size:11px">2. Agents run</div>
+        <div class="wf-box" style="padding:4px 6px;font-size:11px">3. Bid range</div>
+        <div class="wf-box" style="padding:4px 6px;font-size:11px">4. Decide</div>
+        <span class="wf-note" style="font-size:12px">steps highlight as you scroll</span>
+      </div>
+      <div class="wf-dash" style="flex:1;height:130px;display:flex;align-items:center;justify-content:center;position:relative"><span class="wf-mut" style="font-family:monospace;font-size:9px">sticky app frame<br>(swaps per step)</span></div>
+    </div>
+    <div class="wf-row" style="justify-content:center"><span class="wf-tag wf-gold" style="font-size:13px;padding:2px 14px">Try the app yourself →</span></div>
+    <div class="wf-mut" style="font-size:10px;text-align:center">no signup · your PDFs stay private</div>
+  </div>
+</div>
+</div>
+
+<!-- 2c Pitch style -->
+<div class="dv-opt" id="2c">
+<div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Investor pitch — bold claim, live sample report, proof, CTA</div>
+<div class="dv-card wf" style="width:380px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>FilmIQ</b><span style="flex:1"></span><span class="wf-tag wf-gold">Try the app →</span></div>
+  <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;gap:12px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <span class="wf-h" style="font-size:24px">Due diligence used to take 3 weeks.</span>
+        <div style="height:6px;background:#ddd;border-radius:3px;width:85%"></div>
+        <div style="height:6px;background:#ddd;border-radius:3px;width:60%"></div>
+        <div class="wf-row"><span class="wf-tag wf-gold" style="font-size:12px">Try the app →</span><span class="wf-tag" style="font-size:12px">Watch 60s demo</span></div>
+      </div>
+      <div class="wf-box" style="width:150px;padding:8px;transform:rotate(-1.5deg)">
+        <div class="wf-mut" style="font-size:9px">LIVE SAMPLE</div><b style="font-size:12px">Midnight Harbor</b>
+        <div class="wf-row" style="gap:4px;margin:3px 0"><span class="wf-tag wf-gold" style="font-size:10px">82</span><span class="wf-tag" style="font-size:10px">PURSUE</span></div>
+        <div class="wf-bar"><i style="position:absolute;left:20%;right:30%;top:0;bottom:0;background:#d8c07a"></i></div>
+        <div class="wf-mut" style="font-size:9px">typing out live, like a ticker</div>
+      </div>
+    </div>
+    <div class="wf-box" style="padding:8px"><b style="font-size:12px">Who it's for</b><div class="wf-row" style="gap:4px;margin-top:4px"><span class="wf-tag" style="font-size:10px">Film investors</span><span class="wf-tag" style="font-size:10px">OTT buyers</span><span class="wf-tag" style="font-size:10px">Studios</span><span class="wf-tag" style="font-size:10px">Festivals</span></div></div>
+    <div class="wf-row" style="gap:8px"><div class="wf-box" style="flex:1;padding:6px;text-align:center;font-size:11px">RAG over your PDFs</div><div class="wf-box" style="flex:1;padding:6px;text-align:center;font-size:11px">Live web signals</div><div class="wf-box" style="flex:1;padding:6px;text-align:center;font-size:11px">Cited sources</div></div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "go hi-fi on <a class="dv-oid" href="#2a">2a</a>" · "merge <a class="dv-oid" href="#2c">2c</a>'s live sample into <a class="dv-oid" href="#2a">2a</a>" · "hi-fi <a class="dv-oid" href="#2b">2b</a> + recreate the current landing it links to"</p>
+</section>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">FilmIQ — six wireframe directions (Deal Room, Compare, Report, Analysis, Landing)</span></div>
+<div class="dv-opts">
+
+<!-- 1a Deal Room table -->
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Deal Room — ledger table (dense, analyst-style)</div>
+<div class="dv-card wf" style="width:480px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>FilmIQ</b><span class="wf-mut">Deal Room</span><span style="flex:1"></span><span class="wf-tag wf-gold">+ New Analysis</span></div>
+  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+    <div class="wf-row"><span class="wf-h">Deal Room</span><span style="flex:1"></span><span class="wf-tag">Genre ▾</span><span class="wf-tag">Verdict ▾</span><span class="wf-tag">🔍 search</span></div>
+    <div class="wf-row" style="gap:10px">
+      <div class="wf-box" style="flex:1;padding:8px 10px"><div class="wf-mut">Analyzed</div><b style="font-size:18px">24</b></div>
+      <div class="wf-box" style="flex:1;padding:8px 10px"><div class="wf-mut">Avg score</div><b style="font-size:18px">67</b></div>
+      <div class="wf-box" style="flex:1;padding:8px 10px"><div class="wf-mut">Pipeline value</div><b style="font-size:18px">$14M</b></div>
+    </div>
+    <div class="wf-box" style="overflow:hidden">
+      <div class="wf-row wf-mut" style="padding:6px 10px;border-bottom:1.5px solid #555;font-size:11px"><span style="width:130px">FILM</span><span style="width:52px">SCORE</span><span style="flex:1">BID RANGE</span><span style="width:70px">VERDICT</span></div>
+      <div class="wf-row" style="padding:8px 10px;border-bottom:1px dashed #bbb"><span style="width:130px"><b>Midnight Harbor</b><div class="wf-mut">Thriller · Jun 30</div></span><span style="width:52px"><span class="wf-tag wf-gold">82</span></span><span style="flex:1"><div class="wf-bar"><i style="position:absolute;left:20%;right:35%;top:0;bottom:0;background:#d8c07a"></i></div><div class="wf-mut" style="font-size:10px">$0.5M — $1.2M</div></span><span style="width:70px" class="wf-tag">Pursue</span></div>
+      <div class="wf-row" style="padding:8px 10px;border-bottom:1px dashed #bbb"><span style="width:130px"><b>Static Bloom</b><div class="wf-mut">Drama · Jun 22</div></span><span style="width:52px"><span class="wf-tag">54</span></span><span style="flex:1"><div class="wf-bar"><i style="position:absolute;left:10%;right:60%;top:0;bottom:0;background:#d8c07a"></i></div><div class="wf-mut" style="font-size:10px">$0.2M — $0.6M</div></span><span style="width:70px" class="wf-tag">Caution</span></div>
+      <div class="wf-row" style="padding:8px 10px"><span style="width:130px"><b>Red Meridian</b><div class="wf-mut">Action · Jun 12</div></span><span style="width:52px"><span class="wf-tag">31</span></span><span style="flex:1"><div class="wf-bar"><i style="position:absolute;left:5%;right:80%;top:0;bottom:0;background:#d8c07a"></i></div><div class="wf-mut" style="font-size:10px">$0.1M — $0.3M</div></span><span style="width:70px" class="wf-tag">Pass</span></div>
+    </div>
+    <div class="wf-row"><input type="checkbox" checked><input type="checkbox" checked><span class="wf-mut">2 selected</span><span class="wf-tag wf-gold">Compare →</span><span style="flex:1"></span><span class="wf-note">← rows selectable → feeds Compare (see 1c)</span></div>
+  </div>
+</div>
+</div>
+
+<!-- 1b Deal Room poster grid -->
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Deal Room — poster grid + compare tray (visual, slate-style)</div>
+<div class="dv-card wf" style="width:440px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>FilmIQ</b><span style="flex:1"></span><span class="wf-tag">All</span><span class="wf-tag">Pursue</span><span class="wf-tag">Pass</span></div>
+  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+    <span class="wf-h">Your slate</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="wf-box" style="padding:8px"><div class="wf-dash" style="height:70px;display:flex;align-items:center;justify-content:center"><span class="wf-mut" style="font-family:monospace;font-size:9px">poster</span></div><b style="font-size:12px">Midnight Harbor</b><div class="wf-row" style="gap:4px"><span class="wf-tag wf-gold" style="font-size:10px">82</span><span class="wf-mut" style="font-size:10px">$.5–1.2M</span></div></div>
+      <div class="wf-box" style="padding:8px"><div class="wf-dash" style="height:70px;display:flex;align-items:center;justify-content:center"><span class="wf-mut" style="font-family:monospace;font-size:9px">poster</span></div><b style="font-size:12px">Static Bloom</b><div class="wf-row" style="gap:4px"><span class="wf-tag" style="font-size:10px">54</span><span class="wf-mut" style="font-size:10px">$.2–.6M</span></div></div>
+      <div class="wf-box" style="padding:8px"><div class="wf-dash" style="height:70px;display:flex;align-items:center;justify-content:center"><span class="wf-mut" style="font-family:monospace;font-size:9px">poster</span></div><b style="font-size:12px">Red Meridian</b><div class="wf-row" style="gap:4px"><span class="wf-tag" style="font-size:10px">31</span><span class="wf-mut" style="font-size:10px">$.1–.3M</span></div></div>
+    </div>
+    <div class="wf-box wf-gold" style="padding:8px 10px;display:flex;align-items:center;gap:8px"><span class="wf-mut" style="font-size:11px">COMPARE TRAY</span><span class="wf-tag">Midnight H. ×</span><span class="wf-tag">Static B. ×</span><span style="flex:1"></span><b>Compare 2 →</b></div>
+    <span class="wf-note">poster pulled from press-kit PDF cover · tray floats at bottom</span>
+  </div>
+</div>
+</div>
+
+<!-- 1c Compare -->
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Compare — head-to-head columns with winner highlights</div>
+<div class="dv-card wf" style="width:460px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>Compare</b><span class="wf-mut">2 films</span><span style="flex:1"></span><span class="wf-tag">+ Add film</span></div>
+  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+    <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:8px;align-items:center">
+      <span></span><div class="wf-box wf-gold" style="padding:6px;text-align:center"><b>Midnight Harbor</b><div class="wf-mut" style="font-size:10px">Thriller</div></div><div class="wf-box" style="padding:6px;text-align:center"><b>Static Bloom</b><div class="wf-mut" style="font-size:10px">Drama</div></div>
+      <span class="wf-mut">Deal score</span><div class="wf-box wf-gold" style="padding:4px;text-align:center"><b>82 ★</b></div><div class="wf-box" style="padding:4px;text-align:center">54</div>
+      <span class="wf-mut">Bid range</span><div style="padding:2px"><div class="wf-bar"><i style="position:absolute;left:25%;right:20%;top:0;bottom:0;background:#d8c07a"></i></div><div class="wf-mut" style="font-size:10px">$0.5M–$1.2M</div></div><div style="padding:2px"><div class="wf-bar"><i style="position:absolute;left:8%;right:62%;top:0;bottom:0;background:#ddd"></i></div><div class="wf-mut" style="font-size:10px">$0.2M–$0.6M</div></div>
+      <span class="wf-mut">Risk</span><div class="wf-box" style="padding:4px;text-align:center">Medium</div><div class="wf-box" style="padding:4px;text-align:center">High ⚠</div>
+      <span class="wf-mut">Talent</span><div class="wf-box wf-gold" style="padding:4px;text-align:center">Strong ★</div><div class="wf-box" style="padding:4px;text-align:center">Unproven</div>
+      <span class="wf-mut">Buzz</span><div class="wf-box" style="padding:4px;text-align:center">TIFF premiere</div><div class="wf-box" style="padding:4px;text-align:center">—</div>
+    </div>
+    <div class="wf-box" style="padding:8px 10px"><span class="wf-mut" style="font-size:11px">AI VERDICT</span><br>"Midnight Harbor wins on talent + buzz; Static Bloom only at a steep discount."</div>
+    <span class="wf-note">★ = winner per row, gold column tint on overall leader</span>
+  </div>
+</div>
+</div>
+
+<!-- 1d Report -->
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Report — sticky verdict rail + tabs + bid gauge + risk matrix</div>
+<div class="dv-card wf" style="width:520px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>Midnight Harbor</b><span class="wf-tag" style="font-size:10px">Complete ✓</span><span style="flex:1"></span><span class="wf-tag wf-gold">Export memo ⤓</span></div>
+  <div style="display:flex;gap:10px;padding:12px 14px">
+    <div class="wf-box" style="width:150px;padding:10px;display:flex;flex-direction:column;gap:8px;align-self:flex-start">
+      <div class="wf-mut" style="font-size:10px">DEAL SCORE</div>
+      <div style="width:64px;height:64px;border:3px solid #b09040;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto"><b style="font-size:22px">82</b></div>
+      <div class="wf-tag wf-gold" style="text-align:center">PURSUE</div>
+      <div class="wf-mut" style="font-size:10px">BID GAUGE</div>
+      <div class="wf-bar" style="height:10px"><i style="position:absolute;left:18%;right:30%;top:0;bottom:0;background:#d8c07a"></i><i style="position:absolute;left:48%;top:-4px;bottom:-4px;width:2px;background:#333"></i></div>
+      <div class="wf-mut" style="font-size:9px;display:flex;justify-content:space-between"><span>$0.5M<br>Low</span><span>$0.85M<br>Fair</span><span>$1.2M<br>Walk</span></div>
+      <span class="wf-note" style="font-size:13px">rail stays sticky while tabs scroll</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <div class="wf-row" style="gap:4px"><span class="wf-tag wf-gold">Summary</span><span class="wf-tag">Talent</span><span class="wf-tag">Market</span><span class="wf-tag">Risks</span><span class="wf-tag">Bid</span></div>
+      <div class="wf-box" style="padding:8px"><b style="font-size:12px">Executive summary</b><div style="height:6px;background:#ddd;border-radius:3px;margin:6px 0;width:95%"></div><div style="height:6px;background:#ddd;border-radius:3px;margin:6px 0;width:80%"></div><div class="wf-row" style="gap:4px"><span class="wf-tag" style="font-size:9px">PDF p.3</span><span class="wf-tag" style="font-size:9px">WEB</span><span class="wf-note" style="font-size:12px">← source chips inline</span></div></div>
+      <div class="wf-box" style="padding:8px"><b style="font-size:12px">Risk matrix</b>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:6px">
+          <div class="wf-dash" style="height:24px"></div><div class="wf-box" style="height:24px;font-size:9px;padding:2px">Rights ⚠</div><div class="wf-box wf-gold" style="height:24px;font-size:9px;padding:2px">Budget ⚠⚠</div>
+          <div class="wf-dash" style="height:24px"></div><div class="wf-box" style="height:24px;font-size:9px;padding:2px">Cast exit</div><div class="wf-dash" style="height:24px"></div>
+          <div class="wf-box" style="height:24px;font-size:9px;padding:2px">Delay</div><div class="wf-dash" style="height:24px"></div><div class="wf-dash" style="height:24px"></div>
+        </div>
+        <div class="wf-mut" style="font-size:9px;margin-top:2px">likelihood → / severity ↑</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 1e Analysis feed -->
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Analysis — live vertical agent feed with streaming findings</div>
+<div class="dv-card wf" style="width:400px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>Analyzing…</b><span style="flex:1"></span><span class="wf-tag wf-gold">4/7 · 58%</span></div>
+  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:0">
+    <div class="wf-row" style="gap:10px;padding:6px 0"><span style="width:14px;text-align:center">✓</span><div class="wf-box" style="flex:1;padding:6px 8px;opacity:.65"><b style="font-size:12px">Document Analyst</b> <span class="wf-mut" style="font-size:10px">— found budget $2.1M, genre thriller</span></div></div>
+    <div style="border-left:1.5px dashed #999;margin-left:6px;height:8px"></div>
+    <div class="wf-row" style="gap:10px;padding:6px 0"><span style="width:14px;text-align:center">✓</span><div class="wf-box" style="flex:1;padding:6px 8px;opacity:.65"><b style="font-size:12px">Talent Researcher</b> <span class="wf-mut" style="font-size:10px">— director's last film grossed 4× budget</span></div></div>
+    <div style="border-left:1.5px dashed #999;margin-left:6px;height:8px"></div>
+    <div class="wf-row" style="gap:10px;padding:6px 0;align-items:flex-start"><span style="width:14px;text-align:center">◉</span>
+      <div class="wf-box wf-gold" style="flex:1;padding:8px 10px"><b style="font-size:13px">Market Analyst</b> <span class="wf-tag" style="font-size:9px">working…</span>
+        <div style="margin-top:6px;font-size:12px">"Comparable: <i>Coastal Noir</i> sold to Netflix for $1.4M in 2025…"</div>
+        <div class="wf-row" style="gap:4px;margin-top:4px"><span class="wf-tag" style="font-size:9px">WEB</span><span class="wf-tag" style="font-size:9px">PDF p.12</span><span class="wf-note" style="font-size:12px">← findings stream in live</span></div>
+      </div>
+    </div>
+    <div style="border-left:1.5px dashed #999;margin-left:6px;height:8px"></div>
+    <div class="wf-row" style="gap:10px;padding:6px 0"><span style="width:14px;text-align:center">○</span><div class="wf-dash" style="flex:1;padding:6px 8px"><span class="wf-mut" style="font-size:12px">Deals Researcher — waiting</span></div></div>
+    <div class="wf-row" style="gap:10px;padding:6px 0"><span style="width:14px;text-align:center">○</span><div class="wf-dash" style="flex:1;padding:6px 8px"><span class="wf-mut" style="font-size:12px">Buzz · Risk · Strategist — waiting</span></div></div>
+    <span class="wf-note">replaces the 7 tiny cards — a scannable narrative of what the AI actually found</span>
+  </div>
+</div>
+</div>
+
+<!-- 1f Landing -->
+<div class="dv-opt" id="1f">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Landing — hero with live sample-report teaser beside upload</div>
+<div class="dv-card wf" style="width:500px">
+  <div class="wf-nav"><div class="wf-logo"></div><b>FilmIQ</b><span style="flex:1"></span><span class="wf-tag">Deal Room</span><span class="wf-tag wf-gold">New analysis</span></div>
+  <div style="display:flex;gap:12px;padding:14px">
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <span class="wf-h" style="font-size:26px">Know what a film is worth — in minutes.</span>
+      <div style="height:6px;background:#ddd;border-radius:3px;width:90%"></div>
+      <div style="height:6px;background:#ddd;border-radius:3px;width:70%"></div>
+      <div class="wf-dash" style="padding:14px;text-align:center"><b>Drop PDFs here</b><div class="wf-mut" style="font-size:11px">script · press kit · financials</div><span class="wf-tag wf-gold" style="margin-top:4px">Choose PDFs</span></div>
+      <div class="wf-row wf-mut" style="font-size:10px;gap:12px"><span>7 agents</span><span>&lt;5 min</span><span>cited sources</span></div>
+    </div>
+    <div class="wf-box" style="width:180px;padding:10px;transform:rotate(1.5deg);align-self:flex-start">
+      <div class="wf-mut" style="font-size:9px">SAMPLE REPORT</div>
+      <b style="font-size:13px">Midnight Harbor</b>
+      <div class="wf-row" style="gap:4px;margin:4px 0"><span class="wf-tag wf-gold" style="font-size:10px">82</span><span class="wf-tag" style="font-size:10px">PURSUE</span></div>
+      <div class="wf-bar"><i style="position:absolute;left:20%;right:30%;top:0;bottom:0;background:#d8c07a"></i></div>
+      <div class="wf-mut" style="font-size:9px;display:flex;justify-content:space-between"><span>$0.5M</span><span>$1.2M</span></div>
+      <div style="height:5px;background:#ddd;border-radius:3px;margin:6px 0;width:95%"></div>
+      <div style="height:5px;background:#ddd;border-radius:3px;margin:4px 0;width:75%"></div>
+      <span class="wf-note" style="font-size:12px">real output, cycles between 2–3 samples</span>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "go hi-fi on <a class="dv-oid" href="#1a">1a</a> + <a class="dv-oid" href="#1d">1d</a> in the FilmIQ gold style" · "merge <a class="dv-oid" href="#1b">1b</a>'s tray into <a class="dv-oid" href="#1a">1a</a>" · "show visual style variations for the report"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const V = {
+      PURSUE: { color: "#2f7d52", tint: "rgba(47,125,82,.1)" },
+      CAUTION: { color: "#a97a1c", tint: "rgba(169,122,28,.1)" },
+      PASS: { color: "#c94f32", tint: "rgba(201,79,50,.1)" },
+    };
+    // shared $0–$2M scale
+    const films = [
+      { title: "Midnight Harbor", meta: "NEO-NOIR THRILLER · DIR. L. OKAFOR", genreTag: "THRILLER", date: "JUN 30", score: 82, verdict: "PURSUE", lowM: 0.5, fairM: 0.85, walkM: 1.2, art: "linear-gradient(165deg,#0e2233,#3a5a74)", sel: true },
+      { title: "The Cartographer's Daughter", meta: "PERIOD DRAMA · DIR. M. SERRANO", genreTag: "DRAMA", date: "JUN 24", score: 76, verdict: "PURSUE", lowM: 0.8, fairM: 1.15, walkM: 1.6, art: "linear-gradient(165deg,#4a3120,#8a6a45)", sel: true },
+      { title: "Glass Orchard", meta: "FOLK HORROR · DIR. A. LINDQVIST", genreTag: "HORROR", date: "JUN 18", score: 68, verdict: "CAUTION", lowM: 0.4, fairM: 0.62, walkM: 0.9, art: "linear-gradient(165deg,#22301c,#54683f)", sel: false },
+      { title: "Static Bloom", meta: "ENSEMBLE DRAMA · DIR. D. RAMAN", genreTag: "DRAMA", date: "JUN 12", score: 54, verdict: "CAUTION", lowM: 0.2, fairM: 0.4, walkM: 0.6, art: "linear-gradient(165deg,#3a2434,#6d4a63)", sel: false },
+      { title: "Sundown Frequency", meta: "SCI-FI MYSTERY · DIR. C. ABERNATHY", genreTag: "SCI-FI", date: "JUN 05", score: 47, verdict: "CAUTION", lowM: 0.15, fairM: 0.32, walkM: 0.5, art: "linear-gradient(165deg,#1e2440,#4a5488)", sel: false },
+      { title: "Red Meridian", meta: "ACTION · DIR. R. VOLKOV", genreTag: "ACTION", date: "MAY 28", score: 31, verdict: "PASS", lowM: 0.1, fairM: 0.2, walkM: 0.3, art: "linear-gradient(165deg,#401f1a,#7c3a2c)", sel: false },
+    ];
+    const fmt = (m) => (m >= 1 ? "$" + m.toFixed(1).replace(/\.0$/, "") + "M" : "$" + Math.round(m * 1000) + "K");
+    const pct = (m) => (m / 2) * 100;
+    const slate = films.map((f, i) => ({
+      ...f,
+      ...V[f.verdict],
+      initial: f.title.replace(/^The /, "")[0],
+      low: fmt(f.lowM), fair: fmt(f.fairM), walk: fmt(f.walkM),
+      barLeft: pct(f.lowM) + "%",
+      barWidth: (pct(f.walkM) - pct(f.lowM)) + "%",
+      fairPos: pct(f.fairM) + "%",
+      delay: (i * 0.07) + "s",
+    }));
+    const win = "inset 3px 0 0 #2f7d52";
+    const compareRows = [
+      { label: "DEAL SCORE", c1: "82 / 100", s1: "★", w1: win, c2: "76 / 100", s2: "", w2: "none", c3: "68 / 100", s3: "", w3: "none" },
+      { label: "VERDICT", c1: "PURSUE", s1: "", w1: win, c2: "PURSUE", s2: "", w2: "none", c3: "CAUTION", s3: "", w3: "none" },
+      { label: "RISK LEVEL", c1: "Medium — 1 clearance flag", s1: "★", w1: win, c2: "Medium — rights split 3 ways", s2: "", w2: "none", c3: "High — unfinished VFX", s3: "", w3: "none" },
+      { label: "TALENT", c1: "Director 4.2× ROI on last film", s1: "★", w1: win, c2: "Award-winning lead attached", s2: "", w2: "none", c3: "First-time director", s3: "", w3: "none" },
+      { label: "BUZZ", c1: "TIFF Midnight Madness premiere", s1: "★", w1: win, c2: "Venice competition rumor", s2: "", w2: "none", c3: "Strong genre-press coverage", s3: "", w3: "none" },
+      { label: "BEST COMP", c1: "Coastal Noir → Netflix $1.4M", s1: "", w1: win, c2: "The Gilded Map → A24 $1.5M", s2: "", w2: "none", c3: "Hollow Field → Shudder $700K", s3: "", w3: "none" },
+    ];
+    const feedDone = [
+      { name: "Document Analyst", time: "0:38", finding: "Parsed 3 documents · budget $2.1M · finished film, 104 min · worldwide rights available excl. France." },
+      { name: "Talent Researcher", time: "1:12", finding: "Dir. Lena Okafor's previous feature returned 4.2× budget; lead cast has no marquee value but strong critical goodwill." },
+      { name: "Market Analyst", time: "1:05", finding: "Festival neo-noir comps cleared $600K–$1.4M over 18 months; streamer demand for elevated genre up 12% YoY." },
+      { name: "Buzz Analyst", time: "0:51", finding: "TIFF Midnight Madness slot confirmed · 88% positive early-critic sentiment across 14 tracked reviews." },
+    ];
+    const feedWaiting = [
+      { name: "Risk Analyst" },
+      { name: "Acquisitions Strategist" },
+    ];
+    return { slate, compareRows, feedDone, feedWaiting };
+  }
+}
+</script>
+</body>
+</html>

@@ -32,11 +32,14 @@ FilmIQ converts raw PDF assets into a decision-ready acquisition report by combi
 ## Key Features
 
 - ✅ **Multi-agent analysis**: 6 specialist AI workers plus a synthesizing strategist
-- ✅ **Real-time streaming results**: browser sees progress as it happens
+- ✅ **Real-time streaming results**: browser sees progress as it happens, with per-agent findings and citations
 - ✅ **Hybrid retrieval**: BM25 + embeddings over scripts and press kits
+- ✅ **Structured verdicts**: deal score (0-100), PURSUE/CAUTION/PASS verdict, and a severity/likelihood risk matrix — not just prose
+- ✅ **Deal Room**: history of every analysis, filterable by verdict, in a ledger or poster-grid view
+- ✅ **Head-to-head Compare**: pick 2+ analyses and get a side-by-side comparison with an AI verdict paragraph
 - ✅ **Secure per-job access**: token-based SSE authorization
 - ✅ **Minimal runtime cost**: only OpenAI usage is billable
-- ✅ **Frontend-ready**: modern Next.js UI with upload and live analysis
+- ✅ **Frontend-ready**: "Trade Paper" design system — warm paper background, ink serif type, mono data labels
 
 ---
 
@@ -70,7 +73,8 @@ FilmIQ converts raw PDF assets into a decision-ready acquisition report by combi
 | LLMs | OpenAI (GPT-4o / GPT-4o-mini) |
 | Vector DB | Qdrant |
 | Embeddings | OpenAI text-embedding-3-small |
-| Web search | DuckDuckGo via `ddgs` |
+| Web search | DuckDuckGo via `ddgs` (or Tavily, if `TAVILY_API_KEY` is set) |
+| Reports DB | SQLite via SQLAlchemy |
 | Rate limiting | `slowapi` |
 
 ---
@@ -194,6 +198,9 @@ This setup keeps infrastructure cost minimal and only bills for OpenAI usage.
 |----------|--------|-------------|
 | `/api/upload` | POST | Upload PDF files and receive `job_id` + token |
 | `/api/analyze/{job_id}` | GET | Stream live analysis events with SSE |
+| `/api/reports` | GET | List all completed analyses (Deal Room) |
+| `/api/reports/{id}` | GET | Fetch one completed report in full |
+| `/api/compare` | POST | `{"report_ids": [...]}` → the reports plus a short strategist-style comparison paragraph |
 | `/health` | GET | Health check |
 
 ### SSE Event Format
@@ -201,11 +208,15 @@ This setup keeps infrastructure cost minimal and only bills for OpenAI usage.
 ```
 data: {"type":"status","message":"Loading and processing document…","phase":"ingest"}
 data: {"type":"crew_start","film_title":"...","message":"6 specialists running in parallel…"}
-data: {"type":"agent_done","agent":"Market Analyst"}
+data: {"type":"agent_done","agent":"Market Analyst","elapsed":"0:42","finding":"...","sources":[{"type":"pdf","label":"PDF p.3"}]}
 data: {"type":"strategist_start","message":"Synthesizing all findings…"}
-data: {"type":"complete","report":"## Acquisition Report...","bid_range":{"low":"$0.5M","fair":"$0.8M–$1.0M","walk_away":"$1.2M"},"film_title":"..."}
+data: {"type":"complete","report":"## Story & Genre...","bid_range":{"low":"$0.5M","fair":"$0.85M","walk_away":"$1.2M"},"genre":"Neo-Noir Thriller","director":"Lena Okafor","deal_score":82,"verdict":"PURSUE","thesis":"...","bid_rationale":"...","strengths":[...],"concerns":[...],"risks":[{"name":"Music clearance","severity":"med","likelihood":"med"}],"comparables":[{"title":"Coastal Noir","buyer":"Netflix","year":"2025","price":"$1.4M"}],"specialist_findings":{"talent_researcher":"...","market_analyst":"...","deals_researcher":"...","buzz_analyst":"...","risk_analyst":"..."},"film_title":"..."}
 data: {"type":"stream_end"}
 ```
+
+Every completed report is also saved to a SQLite database (`filmiq.db` in
+the upload directory) for the Deal Room and Compare views — the SSE
+protocol above drives the live analysis page; `/api/reports` drives history.
 
 Completed jobs persist their result for 24 hours — reconnecting to
 `/api/analyze/{job_id}` replays the finished report instantly instead of
@@ -225,6 +236,8 @@ FilmIQ/
 │   │   ├── limiter.py
 │   │   └── routes/
 │   │       ├── analyze.py
+│   │       ├── compare.py
+│   │       ├── reports.py
 │   │       └── upload.py
 │   ├── pipeline/
 │   │   ├── agents.py
@@ -233,20 +246,32 @@ FilmIQ/
 │   │   ├── rag.py
 │   │   └── tasks.py
 │   ├── config.py
+│   ├── db.py
 │   ├── main.py
 │   └── tests/
 ├── frontend/
 │   ├── app/
 │   │   ├── page.tsx
-│   │   └── analyze/[jobId]/page.tsx
+│   │   ├── analyze/[jobId]/page.tsx
+│   │   ├── deals/page.tsx
+│   │   └── compare/page.tsx
 │   ├── components/
+│   │   ├── trade/
+│   │   │   ├── BidRangeBar.tsx
+│   │   │   ├── VerdictBadge.tsx
+│   │   │   ├── CitationChip.tsx
+│   │   │   ├── ScoreRing.tsx
+│   │   │   ├── RiskMatrix.tsx
+│   │   │   └── ComparablesTable.tsx
 │   │   ├── AgentTimeline.tsx
 │   │   ├── NavBar.tsx
 │   │   ├── ReportDisplay.tsx
 │   │   └── UploadZone.tsx
 │   └── lib/
 │       ├── api.ts
+│       ├── trade.ts
 │       └── useAnalysis.ts
+├── design/                  # "Trade Paper" design reference bundle
 ├── docker-compose.yml
 └── README.md
 ```

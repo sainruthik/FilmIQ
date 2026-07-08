@@ -1,443 +1,315 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { BidRange } from "@/lib/useAnalysis";
+import type { ComparableDeal, RiskItem } from "@/lib/trade";
+import { parseMoney, verdictColor } from "@/lib/trade";
+import { ScoreRing } from "@/components/trade/ScoreRing";
+import { RiskMatrix } from "@/components/trade/RiskMatrix";
+import { ComparablesTable } from "@/components/trade/ComparablesTable";
 
-/* ── BidRangeCard ────────────────────────────────────────────────────────── */
+type Tab = "summary" | "talent" | "market" | "deals" | "risks" | "bid";
 
-type Trend = "up" | "down" | "neutral";
+const TABS: { key: Tab; label: string }[] = [
+  { key: "summary", label: "Summary" },
+  { key: "talent", label: "Talent" },
+  { key: "market", label: "Market" },
+  { key: "deals", label: "Deals" },
+  { key: "risks", label: "Risks" },
+  { key: "bid", label: "Bid rationale" },
+];
 
-function TrendIcon({ trend, color }: { trend: Trend; color: string }) {
-  const size = 14;
-  if (trend === "up")
-    return (
-      <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
-        <polyline points="2,10 7,4 12,10" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  if (trend === "down")
-    return (
-      <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
-        <polyline points="2,4 7,10 12,4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  return (
-    <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
-      <line x1="2" y1="7" x2="12" y2="7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
+/** Turn "[PDF p.N]" into a fake link the markdown renderer's `a` component can
+ * style as a citation chip, alongside real "[Name](url)" web citations. */
+function citationize(markdown: string): string {
+  return markdown.replace(/\[PDF p\.(\d+)\]/g, "[PDF p.$1](pdf://$1)");
 }
 
-function BidPanel({
-  label,
-  value,
-  description,
-  accent,
-  trend,
-  highlight,
-}: {
-  label: string;
-  value: string | null;
-  description: string;
-  accent: string;
-  trend: Trend;
-  highlight?: boolean;
-}) {
+function CitationLink({ href, children }: { href?: string; children?: React.ReactNode }) {
+  if (href?.startsWith("pdf://")) {
+    return <span className="citation-chip citation-chip-pdf">{children}</span>;
+  }
+  let label: React.ReactNode = children;
+  try {
+    const domain = new URL(href ?? "").hostname.replace(/^www\./, "");
+    label = `WEB · ${domain.toUpperCase()}`;
+  } catch {
+    // not a real URL — fall back to the link text as-is
+  }
   return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 18 },
-        show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 90, damping: 22 } },
-      }}
-      className="relative flex flex-col items-center justify-center gap-3 px-6 py-9 text-center overflow-hidden"
-      style={{
-        borderRight: "1px solid rgba(255,255,255,0.05)",
-      }}
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="citation-chip citation-chip-web"
+      style={{ textDecoration: "none" }}
     >
-      {/* Spotlight on highlight column */}
-      {highlight && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.1) 0%, transparent 70%)",
-          }}
-        />
-      )}
-
-      {/* Label row */}
-      <div className="flex items-center gap-1.5 relative">
-        <TrendIcon trend={trend} color={accent} />
-        <span
-          className="text-[9px] font-sans font-semibold uppercase tracking-[0.18em]"
-          style={{ color: accent }}
-        >
-          {label}
-        </span>
-      </div>
-
-      {/* Value — the hero element */}
-      <p
-        className="font-display leading-none tabular-nums relative"
-        style={{
-          fontSize: "clamp(1.8rem,3.5vw,2.6rem)",
-          color: highlight ? "#c9a84c" : "var(--color-text)",
-          textShadow: highlight ? "0 0 40px rgba(201,168,76,0.25)" : undefined,
-        }}
-      >
-        {value ?? "—"}
-      </p>
-
-      {/* Description */}
-      <p
-        className="text-[10px] font-sans leading-relaxed relative"
-        style={{ color: "var(--color-text-dim)" }}
-      >
-        {description}
-      </p>
-
-      {/* Accent underline on highlighted column */}
-      {highlight && (
-        <div
-          className="absolute bottom-0 left-8 right-8 h-[2px] rounded-full"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent)",
-          }}
-        />
-      )}
-    </motion.div>
+      {label}
+    </a>
   );
 }
 
-function BidRangeCard({ bid }: { bid: BidRange | null }) {
-  if (!bid || (!bid.low && !bid.fair && !bid.walk_away)) return null;
+const MARKDOWN_COMPONENTS = {
+  h1: ({ children }: { children?: React.ReactNode }) => (
+    <h1 className="font-display" style={{ fontSize: "1.7rem", margin: "28px 0 14px", color: "#1a160f" }}>
+      {children}
+    </h1>
+  ),
+  h2: ({ children }: { children?: React.ReactNode }) => (
+    <h2 className="font-display" style={{ fontSize: "1.3rem", margin: "24px 0 10px", color: "#1a160f" }}>
+      {children}
+    </h2>
+  ),
+  h3: ({ children }: { children?: React.ReactNode }) => (
+    <h3 className="font-display" style={{ fontSize: "1.1rem", margin: "18px 0 8px", color: "#3a352b" }}>
+      {children}
+    </h3>
+  ),
+  p: ({ children }: { children?: React.ReactNode }) => (
+    <p style={{ fontSize: 14.5, lineHeight: 1.75, color: "#3a352b", margin: "0 0 14px" }}>{children}</p>
+  ),
+  ul: ({ children }: { children?: React.ReactNode }) => (
+    <ul style={{ margin: "0 0 14px", paddingLeft: 20, color: "#3a352b" }}>{children}</ul>
+  ),
+  ol: ({ children }: { children?: React.ReactNode }) => (
+    <ol style={{ margin: "0 0 14px", paddingLeft: 20, color: "#3a352b" }}>{children}</ol>
+  ),
+  li: ({ children }: { children?: React.ReactNode }) => (
+    <li style={{ fontSize: 13.5, lineHeight: 1.8 }}>{children}</li>
+  ),
+  strong: ({ children }: { children?: React.ReactNode }) => (
+    <strong style={{ fontWeight: 600, color: "#1a160f" }}>{children}</strong>
+  ),
+  a: CitationLink,
+  table: ({ children }: { children?: React.ReactNode }) => (
+    <div className="trade-card overflow-hidden my-4">
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>{children}</table>
+    </div>
+  ),
+  th: ({ children }: { children?: React.ReactNode }) => (
+    <th style={{ background: "#f2ede2", padding: "8px 14px", textAlign: "left", fontSize: 11, color: "#837b6c" }}>
+      {children}
+    </th>
+  ),
+  td: ({ children }: { children?: React.ReactNode }) => (
+    <td style={{ padding: "8px 14px", borderTop: "1px solid var(--color-border-row)" }}>{children}</td>
+  ),
+};
 
+function Markdown({ content }: { content: string }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 36 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring" as const, stiffness: 70, damping: 22, delay: 0.25 }}
-      className="my-12 rounded-3xl overflow-hidden relative"
-      style={{
-        background: "linear-gradient(145deg, #0f0e0a, #141208, #0f0e0a)",
-        border: "1px solid rgba(201,168,76,0.45)",
-        boxShadow:
-          "0 0 80px rgba(201,168,76,0.06), 0 0 0 1px rgba(201,168,76,0.06) inset",
-      }}
-    >
-      {/* Top ambient spotlight */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[480px] h-[220px] pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse, rgba(201,168,76,0.1) 0%, transparent 65%)",
-        }}
-      />
-
-      {/* ── Card header ── */}
-      <div
-        className="relative px-8 pt-8 pb-6 flex flex-col items-center gap-2"
-        style={{ borderBottom: "1px solid rgba(201,168,76,0.15)" }}
-      >
-        {/* Ornament line */}
-        <div className="flex items-center gap-4 w-full max-w-xs justify-center">
-          <div
-            className="flex-1 h-px"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, rgba(201,168,76,0.45))",
-            }}
-          />
-          <span
-            className="text-[8px] font-sans font-semibold uppercase tracking-[0.3em]"
-            style={{ color: "var(--color-gold)", opacity: 0.65 }}
-          >
-            Acquisition Valuation
-          </span>
-          <div
-            className="flex-1 h-px"
-            style={{
-              background:
-                "linear-gradient(-90deg, transparent, rgba(201,168,76,0.45))",
-            }}
-          />
-        </div>
-        <p
-          className="font-display"
-          style={{ fontSize: "clamp(1.5rem,3vw,2rem)", color: "var(--color-text)" }}
-        >
-          Recommended Bid Range
-        </p>
-      </div>
-
-      {/* ── Three panels ── */}
-      <motion.div
-        className="grid grid-cols-3"
-        variants={{
-          hidden: {},
-          show: {
-            transition: { staggerChildren: 0.1, delayChildren: 0.35 },
-          },
-        }}
-        initial="hidden"
-        animate="show"
-      >
-        <BidPanel
-          label="Low Bid"
-          value={bid.low ?? null}
-          description="Entry threshold"
-          accent="rgba(99,179,237,0.8)"
-          trend="down"
-        />
-        <BidPanel
-          label="Fair Value"
-          value={bid.fair ?? null}
-          description="Recommended offer"
-          accent="#c9a84c"
-          trend="neutral"
-          highlight
-        />
-        <BidPanel
-          label="Walk-Away"
-          value={bid.walk_away ? `> ${bid.walk_away}` : null}
-          description="Maximum threshold"
-          accent="rgba(248,113,113,0.85)"
-          trend="up"
-        />
-      </motion.div>
-    </motion.div>
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+      {citationize(content)}
+    </ReactMarkdown>
   );
 }
-
-/* ── ReportDisplay ───────────────────────────────────────────────────────── */
 
 interface Props {
   report: string;
   filmTitle: string;
   bidRange: BidRange | null;
+  genre?: string | null;
+  director?: string | null;
+  dealScore?: number | null;
+  verdict?: string | null;
+  thesis?: string | null;
+  bidRationale?: string | null;
+  strengths?: string[];
+  concerns?: string[];
+  risks?: RiskItem[];
+  comparables?: ComparableDeal[];
+  specialistFindings?: Record<string, string>;
 }
 
-export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
+export function ReportDisplay({
+  report,
+  bidRange,
+  genre,
+  director,
+  dealScore,
+  verdict,
+  thesis,
+  bidRationale,
+  strengths = [],
+  concerns = [],
+  risks = [],
+  comparables = [],
+  specialistFindings = {},
+}: Props) {
+  const [tab, setTab] = useState<Tab>("summary");
+
+  const color = verdictColor(verdict);
+  const low = parseMoney(bidRange?.low);
+  const fair = parseMoney(bidRange?.fair);
+  const walk = parseMoney(bidRange?.walk_away);
+  const fairMarkerPct = walk > low ? Math.min(48, Math.max(18, 18 + ((fair - low) / (walk - low)) * 30)) : 33;
+
+  const findingEntries = Object.values(specialistFindings);
+  const totalFindings = findingEntries.length || 1;
+  const incompleteCount = findingEntries.filter((v) => v.startsWith("Research incomplete")).length;
+  const completeCount = totalFindings - incompleteCount;
+  const confidenceLevel = incompleteCount === 0 ? "HIGH" : incompleteCount <= 1 ? "MEDIUM" : "LOW";
+
   return (
-    <div>
-      {/* ── Dossier header ── */}
-      <div className="mb-10">
-        <div
-          className="h-px w-full mb-8"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(201,168,76,0.35) 30%, rgba(201,168,76,0.35) 70%, transparent)",
-          }}
-        />
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p
-              className="text-[9px] font-sans font-semibold uppercase tracking-[0.28em] mb-2"
-              style={{ color: "var(--color-gold)", opacity: 0.65 }}
-            >
-              Acquisition Analysis Report
-            </p>
-            <h2
-              className="font-display leading-tight"
-              style={{
-                fontSize: "clamp(1.7rem,3vw,2.4rem)",
-                color: "var(--color-text)",
-              }}
-            >
-              {filmTitle}
-            </h2>
-          </div>
-          <p
-            className="text-[11px] font-sans shrink-0 mt-2"
-            style={{ color: "var(--color-text-dim)" }}
+    <div className="flex gap-7" style={{ padding: "0 32px 32px" }}>
+      {/* ── Left rail ── */}
+      <div className="flex flex-col gap-4.5" style={{ width: 280, flexShrink: 0, gap: 18 }}>
+        <div className="trade-card text-center" style={{ padding: 24 }}>
+          <ScoreRing score={dealScore ?? 50} color={color} />
+          <div
+            className="mt-4"
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.16em",
+              color: "#fffdf9",
+              background: color,
+              borderRadius: 6,
+              padding: "8px 0",
+            }}
           >
-            AI-powered due diligence
-          </p>
+            VERDICT: {verdict ?? "CAUTION"}
+          </div>
+          <div className="mt-2" style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#837b6c" }}>
+            CONFIDENCE {confidenceLevel} · {completeCount}/{totalFindings} SPECIALISTS COMPLETED
+          </div>
         </div>
-        <div
-          className="h-px w-full mt-8"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(201,168,76,0.18) 30%, rgba(201,168,76,0.18) 70%, transparent)",
-          }}
-        />
+
+        <div className="trade-card" style={{ padding: 20 }}>
+          <div className="mono-label" style={{ marginBottom: 14 }}>BID GUIDANCE</div>
+          <div
+            style={{
+              position: "relative",
+              height: 10,
+              borderRadius: 99,
+              background:
+                "linear-gradient(90deg,rgba(26,22,15,.08) 0 18%,rgba(47,125,82,.35) 18% 48%,rgba(169,122,28,.35) 48% 78%,rgba(201,79,50,.35) 78% 100%)",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: -4,
+                bottom: -4,
+                width: 3,
+                borderRadius: 2,
+                background: "#1a160f",
+                left: `${fairMarkerPct}%`,
+              }}
+            />
+            <div
+              className="animate-fq-dot"
+              style={{
+                position: "absolute",
+                top: -7,
+                width: 16,
+                height: 24,
+                left: `calc(${fairMarkerPct}% - 7px)`,
+                borderRadius: 4,
+                background: "rgba(26,22,15,.12)",
+              }}
+            />
+          </div>
+          <div className="flex justify-between" style={{ marginTop: 12 }}>
+            <div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600 }}>{bidRange?.low ?? "—"}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.12em", color: "#837b6c" }}>OPENING</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "#2f7d52" }}>{bidRange?.fair ?? "—"}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.12em", color: "#837b6c" }}>FAIR VALUE</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "#c94f32" }}>{bidRange?.walk_away ?? "—"}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.12em", color: "#837b6c" }}>WALK-AWAY</div>
+            </div>
+          </div>
+        </div>
+
+        {thesis && (
+          <div style={{ background: "#1a160f", color: "#fffdf9", borderRadius: 12, padding: "18px 20px" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.16em", color: "#c94f32", marginBottom: 8 }}>
+              ONE-LINE THESIS
+            </div>
+            <p className="font-display italic" style={{ margin: 0, fontSize: 16, lineHeight: 1.5, color: "rgba(255,253,249,.92)" }}>
+              &ldquo;{thesis}&rdquo;
+            </p>
+          </div>
+        )}
+
+        {(genre || director) && (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#837b6c" }}>
+            {[genre, director].filter(Boolean).join(" · ")}
+          </div>
+        )}
       </div>
 
-      {/* ── Bid range card — first for impact ── */}
-      <BidRangeCard bid={bidRange} />
+      {/* ── Content ── */}
+      <div className="flex-1 min-w-0">
+        <div className="flex gap-6 border-b" style={{ borderColor: "var(--color-border)", marginBottom: 22 }}>
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={{
+                fontSize: 13,
+                fontWeight: tab === t.key ? 600 : 400,
+                color: tab === t.key ? "#1a160f" : "#837b6c",
+                padding: "0 2px 12px",
+                borderBottom: tab === t.key ? "2px solid #c94f32" : "2px solid transparent",
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-      {/* ── Report body ── */}
-      <div
-        className="font-sans"
-        style={{ color: "var(--color-text)", lineHeight: 1.78 }}
-      >
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            h1: ({ children }) => (
-              <h1
-                className="font-display mt-12 mb-5"
-                style={{
-                  fontSize: "clamp(1.4rem,2.5vw,1.9rem)",
-                  color: "var(--color-text)",
-                }}
-              >
-                {children}
-              </h1>
-            ),
-            h2: ({ children }) => (
-              <motion.div
-                initial={{ opacity: 0, x: -16 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ type: "spring" as const, stiffness: 90, damping: 22 }}
-                className="mt-12 mb-5"
-              >
-                <div className="flex items-center gap-3">
-                  {/* Accent bar */}
-                  <div
-                    className="w-[3px] h-6 rounded-full shrink-0"
-                    style={{
-                      background:
-                        "linear-gradient(180deg, #c9a84c, rgba(201,168,76,0.3))",
-                    }}
-                  />
-                  <div>
-                    <p
-                      className="text-[8.5px] font-sans font-semibold uppercase tracking-[0.2em] mb-0.5"
-                      style={{ color: "var(--color-text-dim)" }}
-                    >
-                      Section
-                    </p>
-                    <h2
-                      className="font-display"
-                      style={{
-                        fontSize: "clamp(1.1rem,2vw,1.5rem)",
-                        color: "var(--color-text)",
-                      }}
-                    >
-                      {children}
-                    </h2>
+        {tab === "summary" && (
+          <>
+            <Markdown content={report} />
+
+            {(strengths.length > 0 || concerns.length > 0) && (
+              <div className="grid grid-cols-2 gap-4" style={{ marginBottom: 22 }}>
+                {strengths.length > 0 && (
+                  <div className="trade-card" style={{ borderLeft: "3px solid #2f7d52", padding: "16px 18px" }}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.16em", color: "#2f7d52", marginBottom: 10 }}>
+                      STRENGTHS
+                    </div>
+                    <div style={{ fontSize: 13, lineHeight: 2, color: "#3a352b" }}>
+                      {strengths.map((s, i) => (
+                        <div key={i}>{s}</div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <div
-                  className="mt-3 h-px"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, rgba(201,168,76,0.2), rgba(201,168,76,0.05) 40%, transparent)",
-                  }}
-                />
-              </motion.div>
-            ),
-            h3: ({ children }) => (
-              <h3
-                className="font-display mt-7 mb-2 gold-text-dim"
-                style={{ fontSize: "clamp(1rem,1.8vw,1.25rem)" }}
-              >
-                {children}
-              </h3>
-            ),
-            p: ({ children }) => (
-              <p
-                className="text-[14.5px] mb-4 leading-[1.8]"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                {children}
-              </p>
-            ),
-            strong: ({ children }) => (
-              <strong
-                className="font-semibold"
-                style={{ color: "var(--color-text)" }}
-              >
-                {children}
-              </strong>
-            ),
-            ul: ({ children }) => (
-              <ul className="list-none space-y-2 mb-5 pl-0">{children}</ul>
-            ),
-            ol: ({ children }) => (
-              <ol className="list-decimal list-inside space-y-2 mb-5 pl-3">
-                {children}
-              </ol>
-            ),
-            li: ({ children }) => (
-              <li
-                className="text-[14px] flex gap-2.5 items-start"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                <span
-                  className="mt-[9px] shrink-0 w-1 h-1 rounded-full"
-                  style={{ background: "var(--color-gold)", opacity: 0.55 }}
-                />
-                <span className="leading-[1.75]">{children}</span>
-              </li>
-            ),
-            table: ({ children }) => (
-              <div
-                className="my-7 rounded-xl overflow-hidden"
-                style={{ border: "1px solid var(--color-border)" }}
-              >
-                <table className="report-table">{children}</table>
+                )}
+                {concerns.length > 0 && (
+                  <div className="trade-card" style={{ borderLeft: "3px solid #c94f32", padding: "16px 18px" }}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.16em", color: "#c94f32", marginBottom: 10 }}>
+                      CONCERNS
+                    </div>
+                    <div style={{ fontSize: 13, lineHeight: 2, color: "#3a352b" }}>
+                      {concerns.map((c, i) => (
+                        <div key={i}>{c}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ),
-            th: ({ children }) => <th>{children}</th>,
-            td: ({ children }) => <td>{children}</td>,
-            blockquote: ({ children }) => (
-              <blockquote
-                className="pl-5 py-1 my-5 italic text-[13.5px]"
-                style={{
-                  borderLeft: "3px solid rgba(201,168,76,0.38)",
-                  color: "var(--color-text-muted)",
-                }}
-              >
-                {children}
-              </blockquote>
-            ),
-            hr: () => (
-              <div
-                className="my-10 h-px"
-                style={{
-                  background:
-                    "linear-gradient(90deg, transparent, var(--color-border-accent), transparent)",
-                }}
-              />
-            ),
-            a: ({ href, children }) => (
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 font-sans text-[13px] font-medium transition-colors hover:opacity-80"
-                style={{
-                  color: "var(--color-gold)",
-                  textDecoration: "underline",
-                  textDecorationColor: "rgba(201,168,76,0.32)",
-                  textUnderlineOffset: "3px",
-                }}
-              >
-                {children}
-              </a>
-            ),
-            code: ({ children }) => (
-              <code
-                className="text-[12px] px-1.5 py-0.5 rounded font-mono"
-                style={{
-                  background: "rgba(201,168,76,0.07)",
-                  color: "var(--color-gold)",
-                  border: "1px solid rgba(201,168,76,0.14)",
-                }}
-              >
-                {children}
-              </code>
-            ),
-          }}
-        >
-          {report}
-        </ReactMarkdown>
+            )}
+
+            <RiskMatrix risks={risks} />
+            <ComparablesTable deals={comparables} />
+          </>
+        )}
+
+        {tab === "talent" && <Markdown content={specialistFindings.talent_researcher ?? "No findings."} />}
+        {tab === "market" && <Markdown content={specialistFindings.market_analyst ?? "No findings."} />}
+        {tab === "deals" && <Markdown content={specialistFindings.deals_researcher ?? "No findings."} />}
+        {tab === "risks" && <Markdown content={specialistFindings.risk_analyst ?? "No findings."} />}
+        {tab === "bid" && <Markdown content={bidRationale || "No bid rationale available."} />}
       </div>
     </div>
   );
