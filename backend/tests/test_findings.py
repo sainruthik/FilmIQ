@@ -68,3 +68,9 @@ def test_film_cannot_be_its_own_comparable_deal():
     findings = DealsFindings(deals=[deal("Sinners"), deal("Weapons")], price_bands="x")
     kept = without_title(findings, "Sinners (2025)").deals
     assert [d.title for d in kept] == ["Weapons"]
+
+
+def test_leading_heading_in_prose_not_repeated():
+    md = render(_doc(synopsis="### Logline & Synopsis\n\nTwins open a juke joint [PDF p.1]."))
+    assert md.count("Logline & Synopsis") == 1
+    assert "### Logline & Synopsis\n\nTwins open" in md

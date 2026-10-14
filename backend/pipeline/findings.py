@@ -166,6 +166,9 @@ def _prose(text: str) -> str:
     """Text fields are prose; models sometimes stuff headings/tables into
     them, duplicating the real list fields. Drop table lines, bold headings."""
     lines = [line for line in text.strip().splitlines() if not line.lstrip().startswith("|")]
+    # A leading heading repeats the field title the renderer already prints.
+    while lines and (not lines[0].strip() or lines[0].lstrip().startswith("#")):
+        lines.pop(0)
     return re.sub(r"^#{1,6}\s+(.+)$", r"**\1**", "\n".join(lines), flags=re.MULTILINE).strip()
 
 
