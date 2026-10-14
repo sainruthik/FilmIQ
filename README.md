@@ -1,288 +1,130 @@
 # FilmIQ
 
-Institutional-grade film acquisition analysis built for film investors and studios. Upload a script, press kit, or lookbook and get a structured acquisition report with a three-tier bid range in under 5 minutes.
-
-![Stack](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square) ![Stack](https://img.shields.io/badge/Next.js-15-black?style=flat-square) ![Stack](https://img.shields.io/badge/LangGraph-1.2-1C3C3C?style=flat-square) ![Stack](https://img.shields.io/badge/Deep_Agents-0.7-1C3C3C?style=flat-square)
+**AI due diligence for film acquisitions.** Upload a script, press kit, or bid memo as a PDF. Six research agents investigate the film in parallel, a verifier checks that every figure has a source, and a strategist turns the findings into a bid recommendation grounded in which rights are actually available.
 
 ---
 
-## Why This Project
+## What you get
 
-Film acquisition analysis is traditionally slow, inconsistent, and expensive. FilmIQ automates the process so investors can evaluate deals faster and with more consistent evidence.
+A 13–16 page report that streams into the browser as the agents work:
 
-- **Zero infrastructure cost** beyond OpenAI usage
-- **Real-time progress** via SSE streaming
-- **Specialist agents** that think like a film analyst team
-- **Hybrid search** across uploaded materials and live web signals
+- **Bid card**: conservative, base-case, and walk-away figures, each tied to a rights package, plus a **confidence badge** that counts the priced comparable deals behind them.
+- **Evidence sections**: story and rights, director and cast, market comparables, comparable deals, reception, and a risk register, presented as typed tables.
+- **Source conflicts**: where the document and web research disagree, and which value was used.
+- **References**: every cited link in one list.
 
----
-
-## What It Does
-
-FilmIQ converts raw PDF assets into a decision-ready acquisition report by combining:
-
-- **Document ingestion** with Qdrant RAG
-- **Tavily web research** (DuckDuckGo fallback) for the latest industry signal
-- **6 parallel deep-agent specialists** that plan their research before searching
-- **A citation verifier** that sends specialists back to source any unsourced figure
-- **1 strategist agent** for coherent bid recommendation
-- **Low / Fair Value / Walk-Away bid guidance** for fast decisions
+Every figure carries a `[PDF p.N]` label or a named source link, or is marked `[unverified]`.
 
 ---
 
-## Key Features
-
-- ✅ **Multi-agent analysis**: 6 deep-agent specialists plus a synthesizing strategist, orchestrated as a LangGraph `StateGraph`
-- ✅ **Citation verifier loop**: every figure must carry a `[PDF p.N]` or source link; unsourced claims trigger one targeted retry, then get tagged `[unverified]` and discounted from the bid
-- ✅ **Measured, not claimed**: each report ships `citation_coverage` (before/after the retry)
-- ✅ **Real-time streaming results**: browser sees progress as it happens
-- ✅ **Hybrid retrieval**: BM25 + embeddings over scripts and press kits
-- ✅ **Secure per-job access**: token-based SSE authorization
-- ✅ **Minimal runtime cost**: only OpenAI usage is billable
-- ✅ **Frontend-ready**: modern Next.js UI with upload and live analysis
-
----
-
-## Architecture Overview
+## How it works
 
 ```
-[User uploads PDFs] → [FastAPI backend] → [PDF ingestion + Qdrant index]
-                                      │
-                                      │
-           START ─ Send x6 ─> [specialist] ─> [verify] ─┬─> [strategist] ─> END
-                                   ^                    │
-                                   └─ retry flagged ────┘  (once, only the offenders)
-
-  specialist = deep agent (write_todos planning + tools), one of:
-    Document Analyst · Talent Researcher · Market Analyst
-    Deals Researcher · Buzz Analyst · Risk Analyst
-  verify     = deterministic regex: figure without [PDF p.N] / [src](url) -> flagged
-  strategist = single structured-output call -> AcquisitionReport (bid range + report)
-
-[Result stream] → [Next.js frontend via SSE]
+                 ┌────────────────────── LangGraph StateGraph ───────────────────────┐
+PDF ─► ingest ─► │ START ─Send×6─► specialist ─► verify ─┬─► strategist ─► assemble ─►│─► SSE ─► browser
+  (Qdrant +      │                    ▲                  │                            │
+   BM25 hybrid)  │                    └─ retry flagged ──┘ (once, offenders only)     │
+                 └────────────────────────────────────────────────────────────────────┘
 ```
+
+| Stage | What it does |
+|---|---|
+| **Ingest** | Chunks the PDFs into Qdrant; hybrid BM25 + embedding retrieval with page citations. |
+| **Specialists ×6** | Deep agents that plan (`write_todos`), search the documents and the web (Tavily), and return a Pydantic schema. Code renders their tables. |
+| **Verify** | A regex flags any figure without a `[PDF p.N]` label or named link. The specialists responsible retry once; anything still unsourced is tagged `[unverified]`. |
+| **Strategist** | One structured call: executive summary, thesis, three bid scenarios, source conflicts. |
+| **Assemble** | Code combines the specialist evidence, the strategist synthesis, and the references. |
+
+| Specialist | Researches | Tools |
+|---|---|---|
+| Document Analyst | story, financials, rights & windows | documents |
+| Talent Researcher | director filmography, cast value | documents + web |
+| Market Analyst | genre streaming performance, comparable titles | web |
+| Deals Researcher | priced licensing deals for other films | web |
+| Buzz Analyst | scores, critic quotes, sentiment | web |
+| Risk Analyst | rights, licensee, rating, catalogue risks | documents + web |
 
 ---
 
-## Tech Stack
+## Design decisions
+
+- **The model fills in data; code handles structure.** Specialists return typed findings, and code draws every heading and table, so the report layout is identical on every run.
+- **Confidence is counted by code.** Only single-film deals priced between $2M and $300M count. High = 2+, Medium = 1, Low = none.
+- **The bid follows the available rights.** Scenarios price only what a new platform can still license. Budget, box office, and break-even figures are never used as a price.
+- **Grounding is measured.** Each report includes `citation_coverage` before and after the retry. On the Sinners (2025) test document, one run went from 85% to 92%.
+- **Fallbacks degrade instead of failing.** Groq takes over for chat and FastEmbed for embeddings. A failed specialist is reported as incomplete, not written around. Each specialist has a step cap and a 480s deadline.
+
+---
+
+## Tech stack
 
 | Layer | Tech |
-|------|------|
+|---|---|
 | Frontend | Next.js 15, React 19, Tailwind CSS |
-| Backend | FastAPI, Python 3.11, uvicorn |
-| Agents | LangGraph 1.2 + LangChain Deep Agents 0.7 |
-| LLMs | OpenAI (GPT-4o / GPT-4o-mini) |
-| Vector DB | Qdrant |
-| Embeddings | OpenAI text-embedding-3-small |
-| Web search | Tavily (`langchain-tavily`), DuckDuckGo fallback |
-| Tracing | LangSmith (optional) |
-| Packaging | uv |
-| Rate limiting | `slowapi` |
+| Backend | FastAPI, Python 3.11 |
+| Agents | LangGraph 1.2, LangChain Deep Agents 0.7 |
+| LLMs | OpenAI `gpt-4o-mini` / `gpt-4o`, Groq `openai/gpt-oss-120b` fallback |
+| Retrieval | Qdrant + BM25, OpenAI embeddings (FastEmbed fallback) |
+| Search | Tavily, DuckDuckGo fallback |
+| Packaging | uv, Docker |
 
 ---
 
-## Zero Infra Cost Setup
-
-This project runs with no paid infrastructure requirement; the only variable spend is OpenAI API usage. The backend and frontend can run locally or on free deployment tiers while Qdrant can be self-hosted.
-
----
-
-## Quick Start
-
-### Backend
+## Quick start
 
 ```bash
-cd backend
-uv sync
-```
-
-Create a `.env` file using `backend/.env.example` and set:
-
-```env
-OPENAI_API_KEY=sk-...
-QDRANT_API_KEY=...
-QDRANT_HOST=https://your-qdrant-host
-CORS_ORIGINS=http://localhost:3000
-```
-
-Start the API:
-
-```bash
-uv run uvicorn main:app --reload --port 8000
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-```
-
-Create `frontend/.env.local` with:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-Start the UI:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
----
-
-## Docker
-
-```bash
-cp backend/.env.example backend/.env
-
+cp backend/.env.example backend/.env   # add your keys
 docker compose up --build
 ```
 
-- Backend: `http://localhost:8000`
-- Frontend: `http://localhost:3000`
-
----
-
-## Environment Variables
-
-### Backend (`backend/.env`)
+Open [http://localhost:3000](http://localhost:3000). A run takes about 5–8 minutes and costs roughly $0.20–0.50 in API usage. For setup without Docker, see [Contributing](docs/CONTRIBUTING.md).
 
 | Variable | Required | Purpose |
-|---------|----------|---------|
-| `OPENAI_API_KEY` | Yes | OpenAI API access |
-| `QDRANT_API_KEY` | Yes | Qdrant cluster access |
-| `QDRANT_HOST` | Yes | Qdrant endpoint |
-| `OPENAI_WORKER_MODEL` | No | Default: `gpt-4o-mini` |
-| `OPENAI_STRATEGIST_MODEL` | No | Default: `gpt-4o` |
-| `TAVILY_API_KEY` | No | Use Tavily instead of DuckDuckGo for web search (structured results, more reliable) |
-| `GROQ_API_KEY` | No | Chat fallback: every model fails over to Groq (`GROQ_MODEL`, default `openai/gpt-oss-120b`) on any OpenAI error. Embeddings fall back to local FastEmbed regardless |
-| `LANGSMITH_TRACING` | No | Set `true` to trace every run in LangSmith (needs `LANGSMITH_API_KEY`) |
-| `LANGSMITH_API_KEY` | No | LangSmith key; traces show each specialist's plan, tool calls, and the verifier retry |
-| `CORS_ORIGINS` | No | Allowed browser origins (exact match, comma-separated) |
-| `CORS_ORIGIN_REGEX` | No | Regex-matched origins. Defaults to allowing any Vercel preview URL for this project, since Vercel mints a new hashed URL per deploy |
-| `TOKEN_SECRET` | No | Stable secret for job access tokens (so they survive restarts) |
-| `MAX_CONCURRENT_ANALYSES` | No | Global cap on simultaneous pipelines (default: 3) |
+|---|---|---|
+| `OPENAI_API_KEY` | Yes | LLMs and embeddings |
+| `QDRANT_API_KEY`, `QDRANT_HOST` | Yes | Vector store (the Qdrant Cloud free tier works) |
+| `TAVILY_API_KEY` | Recommended | Web search with real URLs |
+| `GROQ_API_KEY` | No | Fallback when OpenAI fails |
+| `LANGSMITH_TRACING`, `LANGSMITH_API_KEY` | No | Tracing (sends document text to LangSmith) |
 
-> **Privacy:** LangSmith traces include uploaded document text and RAG context. Leave tracing off for confidential scripts.
-
-### Frontend (`frontend/.env.local`)
-
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `NEXT_PUBLIC_API_URL` | Yes | Backend API URL |
+Other settings (models, limits, CORS) are documented with their defaults in [`backend/config.py`](backend/config.py).
 
 ---
 
-## Deployment
-
-### Recommended: Render + Vercel
-
-1. Deploy backend on Render using `backend/Dockerfile`
-2. Deploy frontend on Vercel from `frontend`
-3. Set `NEXT_PUBLIC_API_URL` to the Render backend URL, then redeploy the frontend
-   (Next.js bakes `NEXT_PUBLIC_*` vars in at build time — setting the var alone doesn't apply it)
-4. Set `CORS_ORIGINS` to your stable Vercel app URL(s) on Render. Vercel *preview*
-   deployments (URLs with a random hash, e.g. `film-pojole5vw-your-team.vercel.app`)
-   are matched automatically by the `CORS_ORIGIN_REGEX` default — see the env var
-   table above if you're deploying under a different Vercel team/project
-
-This setup keeps infrastructure cost minimal and only bills for OpenAI usage.
-
----
-
-## API Reference
+## API
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/upload` | POST | Upload PDF files and receive `job_id` + token |
-| `/api/analyze/{job_id}` | GET | Stream live analysis events with SSE |
+|---|---|---|
+| `/api/upload` | POST | Upload PDFs. Returns `job_id` and `access_token` |
+| `/api/analyze/{job_id}?token=…` | GET | SSE stream: `status`, `agent_done`, `strategist_start`, `complete` (report, `bid_range`, `citation_coverage`) |
 | `/health` | GET | Health check |
 
-### SSE Event Format
-
-```
-data: {"type":"status","message":"Loading and processing document…","phase":"ingest"}
-data: {"type":"crew_start","film_title":"...","message":"6 specialists running in parallel…"}
-data: {"type":"agent_done","agent":"Market Analyst"}
-data: {"type":"status","phase":"verify","message":"Citation check flagged 4 unsourced figure(s) from 2 specialist(s). Sending back for sources…"}
-data: {"type":"strategist_start","message":"Synthesizing all findings…"}
-data: {"type":"complete","report":"## Acquisition Report...","bid_range":{"low":"$0.5M","fair":"$0.8M–$1.0M","walk_away":"$1.2M"},"film_title":"...","citation_coverage":{"before":0.72,"after":0.96}}
-data: {"type":"stream_end"}
-```
-
-Completed jobs persist their result for 24 hours — reconnecting to
-`/api/analyze/{job_id}` replays the finished report instantly instead of
-re-running the analysis, and reconnecting mid-run re-attaches to the running
-pipeline.
+Finished reports are kept for 24 hours. Reconnecting replays them without re-running.
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
-FilmIQ/
-├── backend/
-│   ├── api/
-│   │   ├── auth.py
-│   │   ├── jobs.py
-│   │   ├── limiter.py
-│   │   └── routes/
-│   │       ├── analyze.py
-│   │       └── upload.py
-│   ├── pipeline/
-│   │   ├── agents.py
-│   │   ├── graph.py      # LangGraph StateGraph + run_pipeline
-│   │   ├── ingest.py
-│   │   ├── rag.py
-│   │   ├── tasks.py      # prompts + AcquisitionReport schema
-│   │   └── verifier.py   # citation check / coverage metric
-│   ├── config.py
-│   ├── main.py
-│   ├── pyproject.toml
-│   ├── uv.lock
-│   └── tests/
-├── frontend/
-│   ├── app/
-│   │   ├── page.tsx
-│   │   └── analyze/[jobId]/page.tsx
-│   ├── components/
-│   │   ├── AgentTimeline.tsx
-│   │   ├── NavBar.tsx
-│   │   ├── ReportDisplay.tsx
-│   │   └── UploadZone.tsx
-│   └── lib/
-│       ├── api.ts
-│       └── useAnalysis.ts
-├── docker-compose.yml
-└── README.md
+backend/pipeline/
+├── graph.py      # LangGraph pipeline: fan-out, verify/retry, strategist
+├── agents.py     # specialists, tools, budgets, fallback middleware
+├── findings.py   # specialist schemas, table rendering, comparable counting
+├── tasks.py      # prompts, AcquisitionReport schema
+├── report.py     # report assembly, bid card, references
+├── verifier.py   # citation check and coverage metric
+└── llm.py, ingest.py, rag.py
+frontend/         # Next.js upload page and live report
+docs/             # CONTRIBUTING.md, RUNBOOK.md
 ```
 
 ---
 
-## Tests
+## Known limitations
 
-```bash
-cd backend
-uv run pytest -v
-```
+- **Priced comparables are rare.** Many reports land at Medium or Low confidence, and say so.
+- **Bids vary between runs.** The rights grounding and the confidence badge narrow the variation; they don't remove it.
 
 ---
 
-## What This Demonstrates
-
-- building a modern LLM-enabled product with **full-stack AI orchestration** (LangGraph fan-out/fan-in with `Send`, conditional retry edges)
-- making agent output **auditable**: a deterministic verifier and a coverage metric instead of trusting the model
-- designing a **real-time streaming UX** for model progress
-- implementing **secure token-based job access**
-- integrating **RAG + live web search** for better context
-- shipping a project with **zero infrastructure cost** aside from OpenAI
-
----
-
-## Author
-
-Built by [Sainruthik S](https://github.com/sainruthiks) — AI engineer focused on production-grade agent systems.
+Built by [Sainruthik S](https://github.com/sainruthik).
