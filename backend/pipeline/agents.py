@@ -186,6 +186,8 @@ def build_specialists(rag_invoke: Callable[[str], str]) -> dict:
     """Returns {key: compiled deep agent} for the six specialists."""
     from deepagents import create_deep_agent
 
+    from langchain.agents.structured_output import ToolStrategy
+
     from .findings import SCHEMAS
 
     from .llm import openai_chat
@@ -204,7 +206,9 @@ def build_specialists(rag_invoke: Callable[[str], str]) -> dict:
                 "deliverable — the files you write are scratch space and are not read by anyone."
             ),
             middleware=_middleware(temperature),
-            response_format=SCHEMAS[key],
+            # Tool-calling mode works on both OpenAI and the Groq fallback; Groq
+            # rejects JSON mode combined with tools.
+            response_format=ToolStrategy(SCHEMAS[key]),
             name=key,
         ).with_config({"recursion_limit": recursion_limit(key)})
         for key, (tool_keys, budget, temperature, role) in _SPECS.items()

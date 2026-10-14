@@ -110,7 +110,8 @@ def test_slate_deals_and_ip_rights_do_not_count():
                        reported_price=price, single_title=single, source="[PDF p.1]")
 
     findings = DealsFindings(
-        deals=[deal("Obsession", "$15M+", True), deal("Sony slate", "$7B+", True), deal("Siren Head", "$1M+", False)],
+        deals=[deal("Obsession", "$15M+", True), deal("Obsession", "$15M+ (streaming)", True),
+               deal("Sony slate", "$7B+", True), deal("Siren Head rights", "$1M+", True)],
         price_bands="x",
     )
     assert priced_count(findings) == 1
@@ -123,3 +124,10 @@ def test_single_film_flag_renders_yes_no():
                                              reported_price="$5M", single_title=True, source="[PDF p.1]")],
                               price_bands="x"))
     assert "| Single film |" in md and "| Yes |" in md
+
+
+def test_numbers_in_text_fields_are_accepted():
+    from pipeline.findings import FilmRow
+
+    row = FilmRow(film="Creed", year=2015, worldwide_gross=174, awards="x", source="[PDF p.1]")
+    assert row.year == "2015" and row.worldwide_gross == "174"

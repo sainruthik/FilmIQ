@@ -3,7 +3,7 @@ and table, so the report structure can't drift between runs."""
 import re
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 _SOURCE = (
     "Citation for this row: [PDF p.N] for the uploaded documents, or a named markdown link "
@@ -15,14 +15,20 @@ def _source():
     return Field(description=_SOURCE)
 
 
+class _Model(BaseModel):
+    # Models often emit 2015 rather than "2015" for text fields; a strict
+    # string check failed the whole talent run over one year cell.
+    model_config = ConfigDict(coerce_numbers_to_str=True)
+
+
 # ── Document analyst ─────────────────────────────────────────────────────
-class FinancialRow(BaseModel):
+class FinancialRow(_Model):
     metric: str
     figure: str = Field(description="Figure as stated, or 'Not publicly disclosed'")
     source: str = _source()
 
 
-class RightsRow(BaseModel):
+class RightsRow(_Model):
     right_or_window: str = Field(title="Right / window")
     status: str
     holder: str
@@ -30,7 +36,7 @@ class RightsRow(BaseModel):
     source: str = _source()
 
 
-class DocumentFindings(BaseModel):
+class DocumentFindings(_Model):
     synopsis: str = Field(title="Logline & Synopsis", description="Markdown, 2-3 paragraphs, claims labeled [PDF p.N]")
     genre_tone_audience: str = Field(title="Genre, Tone & Audience", description="Markdown, 1-2 paragraphs")
     financials: list[FinancialRow] = Field(title="Financials", description="Budget, grosses, other money figures in the documents")
@@ -42,7 +48,7 @@ class DocumentFindings(BaseModel):
 
 
 # ── Talent researcher ────────────────────────────────────────────────────
-class FilmRow(BaseModel):
+class FilmRow(_Model):
     film: str
     year: str
     worldwide_gross: str
@@ -50,7 +56,7 @@ class FilmRow(BaseModel):
     source: str = _source()
 
 
-class CastRow(BaseModel):
+class CastRow(_Model):
     actor: str
     notable_credits: str
     box_office_draw: str
@@ -59,7 +65,7 @@ class CastRow(BaseModel):
     source: str = _source()
 
 
-class TalentFindings(BaseModel):
+class TalentFindings(_Model):
     director: str = Field(title="Director", description="Markdown paragraph on the director's track record")
     filmography: list[FilmRow] = Field(title="Director Filmography")
     cast: list[CastRow] = Field(title="Lead Cast", description="The 3-6 most commercially relevant leads")
@@ -67,7 +73,7 @@ class TalentFindings(BaseModel):
 
 
 # ── Market analyst ───────────────────────────────────────────────────────
-class ComparableTitle(BaseModel):
+class ComparableTitle(_Model):
     title: str
     year: str
     theatrical_gross: str
@@ -76,14 +82,14 @@ class ComparableTitle(BaseModel):
     source: str = _source()
 
 
-class MarketFindings(BaseModel):
+class MarketFindings(_Model):
     genre_performance: str = Field(title="Genre Performance on Streaming", description="Markdown, 2 paragraphs")
     comparables: list[ComparableTitle] = Field(title="Comparable Titles", description="3-5 titles")
     regional_demand: str = Field(title="Regional Demand", description="Markdown: territories that over/under-index and why")
 
 
 # ── Deals researcher ─────────────────────────────────────────────────────
-class DealRow(BaseModel):
+class DealRow(_Model):
     title: str
     year: str
     buyer: str
@@ -98,7 +104,7 @@ class DealRow(BaseModel):
     source: str = _source()
 
 
-class DealsFindings(BaseModel):
+class DealsFindings(_Model):
     deals: list[DealRow] = Field(
         title="Comparable Deals",
         description="3-5 licensing/acquisition deals for OTHER films with a similar rights scope; "
@@ -112,20 +118,20 @@ class DealsFindings(BaseModel):
 
 
 # ── Buzz analyst ─────────────────────────────────────────────────────────
-class ScoreRow(BaseModel):
+class ScoreRow(_Model):
     outlet: str = Field(description="e.g. Rotten Tomatoes critics, Metacritic, CinemaScore")
     score: str
     as_of: str = Field(title="As of")
     source: str = _source()
 
 
-class QuoteRow(BaseModel):
+class QuoteRow(_Model):
     quote: str
     outlet: str
     source: str = _source()
 
 
-class BuzzFindings(BaseModel):
+class BuzzFindings(_Model):
     scores: list[ScoreRow] = Field(title="Scores")
     quotes: list[QuoteRow] = Field(title="Critical Consensus", description="3-5 short quotes")
     social_sentiment: str = Field(title="Social & Audience Sentiment", description="Markdown paragraph with dated indicators")
@@ -135,7 +141,7 @@ class BuzzFindings(BaseModel):
 Level = Literal["High", "Medium", "Low"]
 
 
-class RiskRow(BaseModel):
+class RiskRow(_Model):
     risk: str
     severity: Level
     likelihood: Level
@@ -144,7 +150,7 @@ class RiskRow(BaseModel):
     source: str = _source()
 
 
-class RiskFindings(BaseModel):
+class RiskFindings(_Model):
     risks: list[RiskRow] = Field(title="Risk Register", description="Risks specific to this film, documents first")
     deal_breakers: str = Field(title="Deal-Breakers", description="Markdown: risks that should stop or reshape a bid")
 
@@ -197,7 +203,7 @@ _UNIT_MILLIONS = {"b": 1000, "bn": 1000, "billion": 1000, "m": 1, "mn": 1, "mill
                   "k": 0.001, "thousand": 0.001}
 # A single film's licence or acquisition. Outside this band it's a slate/output
 # deal ($7B Netflix–Sony) or a trivial rights buy, not a comparable.
-PLAUSIBLE_MILLIONS = (0.5, 300.0)
+PLAUSIBLE_MILLIONS = (2.0, 300.0)
 
 
 def price_millions(text: str) -> float | None:
@@ -214,11 +220,12 @@ def priced_count(findings: BaseModel) -> int:
     if not isinstance(findings, DealsFindings):
         return 0
     low, high = PLAUSIBLE_MILLIONS
-    return sum(
-        1
-        for d in _dedupe(findings.deals)
+    # Distinct films: one film listed under two rights scopes is one comparable.
+    return len({
+        d.title.strip().lower()
+        for d in findings.deals
         if d.single_title and (p := price_millions(d.reported_price)) is not None and low <= p <= high
-    )
+    })
 
 
 def confidence(priced: int) -> str:
