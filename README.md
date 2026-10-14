@@ -2,7 +2,7 @@
 
 Institutional-grade film acquisition analysis built for film investors and studios. Upload a script, press kit, or lookbook and get a structured acquisition report with a three-tier bid range in under 5 minutes.
 
-![Stack](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square) ![Stack](https://img.shields.io/badge/Next.js-15-black?style=flat-square) ![Stack](https://img.shields.io/badge/CrewAI-0.80-orange?style=flat-square)
+![Stack](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square) ![Stack](https://img.shields.io/badge/Next.js-15-black?style=flat-square) ![Stack](https://img.shields.io/badge/LangGraph-1.2-1C3C3C?style=flat-square) ![Stack](https://img.shields.io/badge/Deep_Agents-0.7-1C3C3C?style=flat-square)
 
 ---
 
@@ -22,8 +22,9 @@ Film acquisition analysis is traditionally slow, inconsistent, and expensive. Fi
 FilmIQ converts raw PDF assets into a decision-ready acquisition report by combining:
 
 - **Document ingestion** with Qdrant RAG
-- **DuckDuckGo research** for the latest industry signal
-- **6 parallel specialist agents** for deep domain analysis
+- **Tavily web research** (DuckDuckGo fallback) for the latest industry signal
+- **6 parallel deep-agent specialists** that plan their research before searching
+- **A citation verifier** that sends specialists back to source any unsourced figure
 - **1 strategist agent** for coherent bid recommendation
 - **Low / Fair Value / Walk-Away bid guidance** for fast decisions
 
@@ -31,7 +32,9 @@ FilmIQ converts raw PDF assets into a decision-ready acquisition report by combi
 
 ## Key Features
 
-- ✅ **Multi-agent analysis**: 6 specialist AI workers plus a synthesizing strategist
+- ✅ **Multi-agent analysis**: 6 deep-agent specialists plus a synthesizing strategist, orchestrated as a LangGraph `StateGraph`
+- ✅ **Citation verifier loop**: every figure must carry a `[PDF p.N]` or source link; unsourced claims trigger one targeted retry, then get tagged `[unverified]` and discounted from the bid
+- ✅ **Measured, not claimed**: each report ships `citation_coverage` (before/after the retry)
 - ✅ **Real-time streaming results**: browser sees progress as it happens
 - ✅ **Hybrid retrieval**: BM25 + embeddings over scripts and press kits
 - ✅ **Secure per-job access**: token-based SSE authorization
@@ -45,15 +48,16 @@ FilmIQ converts raw PDF assets into a decision-ready acquisition report by combi
 ```
 [User uploads PDFs] → [FastAPI backend] → [PDF ingestion + Qdrant index]
                                       │
-                                      ├─ [6 specialist agents run in parallel]
-                                      │     ├─ Document Analyst
-                                      │     ├─ Talent Researcher
-                                      │     ├─ Market Analyst
-                                      │     ├─ Deals Researcher
-                                      │     ├─ Buzz Analyst
-                                      │     └─ Risk Analyst
                                       │
-                                      └─ [Strategist synthesizes final report]
+           START ─ Send x6 ─> [specialist] ─> [verify] ─┬─> [strategist] ─> END
+                                   ^                    │
+                                   └─ retry flagged ────┘  (once, only the offenders)
+
+  specialist = deep agent (write_todos planning + tools), one of:
+    Document Analyst · Talent Researcher · Market Analyst
+    Deals Researcher · Buzz Analyst · Risk Analyst
+  verify     = deterministic regex: figure without [PDF p.N] / [src](url) -> flagged
+  strategist = single structured-output call -> AcquisitionReport (bid range + report)
 
 [Result stream] → [Next.js frontend via SSE]
 ```
@@ -66,11 +70,13 @@ FilmIQ converts raw PDF assets into a decision-ready acquisition report by combi
 |------|------|
 | Frontend | Next.js 15, React 19, Tailwind CSS |
 | Backend | FastAPI, Python 3.11, uvicorn |
-| Agents | CrewAI 0.80 |
+| Agents | LangGraph 1.2 + LangChain Deep Agents 0.7 |
 | LLMs | OpenAI (GPT-4o / GPT-4o-mini) |
 | Vector DB | Qdrant |
 | Embeddings | OpenAI text-embedding-3-small |
-| Web search | DuckDuckGo via `ddgs` |
+| Web search | Tavily (`langchain-tavily`), DuckDuckGo fallback |
+| Tracing | LangSmith (optional) |
+| Packaging | uv |
 | Rate limiting | `slowapi` |
 
 ---
@@ -87,12 +93,7 @@ This project runs with no paid infrastructure requirement; the only variable spe
 
 ```bash
 cd backend
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
-pip install -r requirements.txt
+uv sync
 ```
 
 Create a `.env` file using `backend/.env.example` and set:
@@ -107,7 +108,7 @@ CORS_ORIGINS=http://localhost:3000
 Start the API:
 
 ```bash
-uvicorn main:app --reload --port 8000
+uv run uvicorn main:app --reload --port 8000
 ```
 
 ### Frontend
@@ -158,10 +159,15 @@ docker compose up --build
 | `OPENAI_WORKER_MODEL` | No | Default: `gpt-4o-mini` |
 | `OPENAI_STRATEGIST_MODEL` | No | Default: `gpt-4o` |
 | `TAVILY_API_KEY` | No | Use Tavily instead of DuckDuckGo for web search (structured results, more reliable) |
+| `GROQ_API_KEY` | No | Chat fallback: every model fails over to Groq (`GROQ_MODEL`, default `llama-3.3-70b-versatile`) on any OpenAI error. Embeddings fall back to local FastEmbed regardless |
+| `LANGSMITH_TRACING` | No | Set `true` to trace every run in LangSmith (needs `LANGSMITH_API_KEY`) |
+| `LANGSMITH_API_KEY` | No | LangSmith key; traces show each specialist's plan, tool calls, and the verifier retry |
 | `CORS_ORIGINS` | No | Allowed browser origins (exact match, comma-separated) |
 | `CORS_ORIGIN_REGEX` | No | Regex-matched origins. Defaults to allowing any Vercel preview URL for this project, since Vercel mints a new hashed URL per deploy |
 | `TOKEN_SECRET` | No | Stable secret for job access tokens (so they survive restarts) |
 | `MAX_CONCURRENT_ANALYSES` | No | Global cap on simultaneous pipelines (default: 3) |
+
+> **Privacy:** LangSmith traces include uploaded document text and RAG context. Leave tracing off for confidential scripts.
 
 ### Frontend (`frontend/.env.local`)
 
@@ -202,8 +208,9 @@ This setup keeps infrastructure cost minimal and only bills for OpenAI usage.
 data: {"type":"status","message":"Loading and processing document…","phase":"ingest"}
 data: {"type":"crew_start","film_title":"...","message":"6 specialists running in parallel…"}
 data: {"type":"agent_done","agent":"Market Analyst"}
+data: {"type":"status","phase":"verify","message":"Citation check flagged 4 unsourced figure(s) from 2 specialist(s). Sending back for sources…"}
 data: {"type":"strategist_start","message":"Synthesizing all findings…"}
-data: {"type":"complete","report":"## Acquisition Report...","bid_range":{"low":"$0.5M","fair":"$0.8M–$1.0M","walk_away":"$1.2M"},"film_title":"..."}
+data: {"type":"complete","report":"## Acquisition Report...","bid_range":{"low":"$0.5M","fair":"$0.8M–$1.0M","walk_away":"$1.2M"},"film_title":"...","citation_coverage":{"before":0.72,"after":0.96}}
 data: {"type":"stream_end"}
 ```
 
@@ -228,12 +235,15 @@ FilmIQ/
 │   │       └── upload.py
 │   ├── pipeline/
 │   │   ├── agents.py
-│   │   ├── crew.py
+│   │   ├── graph.py      # LangGraph StateGraph + run_pipeline
 │   │   ├── ingest.py
 │   │   ├── rag.py
-│   │   └── tasks.py
+│   │   ├── tasks.py      # prompts + AcquisitionReport schema
+│   │   └── verifier.py   # citation check / coverage metric
 │   ├── config.py
 │   ├── main.py
+│   ├── pyproject.toml
+│   ├── uv.lock
 │   └── tests/
 ├── frontend/
 │   ├── app/
@@ -257,14 +267,15 @@ FilmIQ/
 
 ```bash
 cd backend
-pytest tests/ -v
+uv run pytest -v
 ```
 
 ---
 
 ## What This Demonstrates
 
-- building a modern LLM-enabled product with **full-stack AI orchestration**
+- building a modern LLM-enabled product with **full-stack AI orchestration** (LangGraph fan-out/fan-in with `Send`, conditional retry edges)
+- making agent output **auditable**: a deterministic verifier and a coverage metric instead of trusting the model
 - designing a **real-time streaming UX** for model progress
 - implementing **secure token-based job access**
 - integrating **RAG + live web search** for better context

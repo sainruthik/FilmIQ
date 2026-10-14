@@ -72,13 +72,14 @@ _SPECIALIST_SPECS: dict[str, tuple[str, str]] = {
 
 
 class AcquisitionReport(BaseModel):
-    """Structured strategist output — replaces the old first-line BID_JSON
-    sentinel hack with a schema CrewAI enforces directly, so the bid figures
-    can never end up malformed or missing from the client's perspective."""
+    """Structured strategist output, enforced by OpenAI structured output so
+    the bid figures can never end up malformed or missing for the client."""
 
-    bid_low: str = Field(description="Low bid estimate as a short string, e.g. '$0.5M'")
-    bid_fair: str = Field(description="Fair value bid range as a short string, e.g. '$0.8M-$1.0M'")
-    bid_walk_away: str = Field(description="Walk-away ceiling bid as a short string, e.g. '$1.2M'")
+    # No concrete example figures here: the model copied them verbatim as
+    # the bid. Format hints only; the numbers must come from the research.
+    bid_low: str = Field(description="Low bid: a short USD string in millions, derived from the deal comparables")
+    bid_fair: str = Field(description="Fair value bid range: a short USD range string in millions")
+    bid_walk_away: str = Field(description="Walk-away ceiling bid: a short USD string in millions")
     report_markdown: str = Field(
         description=(
             "Full markdown acquisition report covering all 8 required sections, including a "
@@ -88,35 +89,26 @@ class AcquisitionReport(BaseModel):
     )
 
 
-def build_specialist_tasks(agents: dict, film_title: str) -> dict:
-    """Returns {key: Task} — all independent, safe to run in parallel."""
-    from crewai import Task
-
-    return {
-        key: Task(
-            description=desc.format(title=film_title),
-            expected_output=expected,
-            agent=agents[key],
-        )
-        for key, (desc, expected) in _SPECIALIST_SPECS.items()
-    }
+def specialist_prompt(key: str, film_title: str) -> str:
+    desc, expected = _SPECIALIST_SPECS[key]
+    return f"{desc.format(title=film_title)}\n\nDeliverable: {expected}"
 
 
-def build_strategist_task(
-    agent,
-    film_title: str,
-    specialist_tasks: dict,
-    specialist_outputs: dict[str, str],
-):
-    """Builds the strategist task, wired to the already-executed specialist
-    tasks via CrewAI's native `context` (each task's `.output` is already
-    populated from its own mini-crew run) instead of hand-concatenating their
-    text into the description. Falls back to an explicit note for any
-    specialist whose research came back incomplete, since a task with no
-    `.output` is silently dropped from `context`.
-    """
-    from crewai import Task
+def retry_prompt(key: str, film_title: str, previous: str, uncited: list[str]) -> str:
+    """Sends a specialist back with the exact claims the verifier flagged."""
+    flagged = "\n".join(f"- {c}" for c in uncited)
+    return (
+        f"{specialist_prompt(key, film_title)}\n\n"
+        f"Your previous answer was:\n\n{previous}\n\n"
+        "A citation check flagged these sentences for stating a figure with no citation:\n"
+        f"{flagged}\n\n"
+        "Rewrite your complete answer. For each flagged sentence, either back the figure with "
+        "a citation ([PDF p.N] or a markdown hyperlink [Source Name](url) — search again if "
+        'needed) or replace the figure with "Not publicly disclosed". Keep everything else.'
+    )
 
+
+def strategist_prompt(film_title: str, specialist_outputs: dict[str, str]) -> str:
     incomplete = [
         key.replace("_", " ").title()
         for key, output in specialist_outputs.items()
@@ -130,30 +122,26 @@ def build_strategist_task(
         if incomplete
         else ""
     )
+    research = "\n\n".join(
+        f"## {key.replace('_', ' ').title()}\n\n{output}"
+        for key, output in specialist_outputs.items()
+    )
 
-    return Task(
-        description=(
-            f"Synthesise all specialist research (provided as context) into a final "
-            f"acquisition report for '{film_title}' with these sections:\n"
-            "1. Story & Genre Analysis\n"
-            "2. Director Track Record\n"
-            "3. Cast Value Score\n"
-            "4. Genre & Market Performance\n"
-            "5. Festival & Critic Buzz\n"
-            "6. Risk Flags\n"
-            "7. Recommended Bid Range — include full justification paragraphs.\n"
-            "8. References — numbered markdown list of all web hyperlinks: [Source Name](url)\n\n"
-            "Preserve source labels [PDF p.N] and all markdown hyperlinks from the specialist "
-            "research. Never state a specific number without a citation from that research; "
-            "if a specialist could not confirm a figure, say so rather than estimating."
-            f"{incomplete_note}"
-        ),
-        expected_output=(
-            "bid_low, bid_fair, and bid_walk_away as short strings (e.g. '$0.8M'), plus "
-            "report_markdown containing the complete 8-section acquisition report with "
-            "source-labeled claims and a numbered References section."
-        ),
-        agent=agent,
-        context=list(specialist_tasks.values()),
-        output_pydantic=AcquisitionReport,
+    return (
+        f"Synthesise the specialist research below into a final acquisition report for "
+        f"'{film_title}' with these sections:\n"
+        "1. Story & Genre Analysis\n"
+        "2. Director Track Record\n"
+        "3. Cast Value Score\n"
+        "4. Genre & Market Performance\n"
+        "5. Festival & Critic Buzz\n"
+        "6. Risk Flags\n"
+        "7. Recommended Bid Range — include full justification paragraphs.\n"
+        "8. References — numbered markdown list of all web hyperlinks: [Source Name](url)\n\n"
+        "Preserve source labels [PDF p.N] and all markdown hyperlinks from the specialist "
+        "research. Never state a specific number without a citation from that research; "
+        "if a specialist could not confirm a figure, say so rather than estimating. Claims "
+        "tagged [unverified] failed a citation check: give them no weight in the bid range "
+        "and do not repeat them as fact."
+        f"{incomplete_note}\n\n# Specialist research\n\n{research}"
     )

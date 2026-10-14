@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -15,7 +16,6 @@ class Settings(BaseSettings):
     openai_strategist_model: str = "gpt-4o"
 
     embed_model: str = "text-embedding-3-small"
-    embed_dim: int = 1536
 
     upload_dir: Path = Path("uploads")
     max_file_size_mb: int = 50
@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     # tier at https://tavily.com. Falls back to DuckDuckGo when unset.
     tavily_api_key: str = ""
 
+    # Optional: when set, every chat model falls back to Groq on any OpenAI
+    # error (quota, rate limit, outage). Embeddings fall back to local
+    # FastEmbed regardless, since Groq has no embeddings API.
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
     # Comma-separated allowed CORS origins — override in .env for production
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
@@ -59,4 +65,7 @@ class Settings(BaseSettings):
         return value
 
 
+# Settings only reads the fields it declares; export the rest of .env (e.g.
+# LANGSMITH_TRACING / LANGSMITH_API_KEY) so LangChain's tracing picks it up.
+load_dotenv()
 settings = Settings()

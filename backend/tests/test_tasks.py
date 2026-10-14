@@ -1,23 +1,16 @@
-"""Unit tests for pipeline/tasks.py.
-
-crewai isn't installed in this environment (only in the Docker image via
-requirements.txt), but every crewai import in tasks.py is lazy — done inside
-the function body — so pure string/schema logic is testable directly, and
-the Task-building functions are testable by injecting a fake `crewai` module
-into sys.modules before calling them (the lazy `from crewai import Task`
-then binds to the fake module instead of failing to import the real one).
-"""
-import sys
-import types
-
+"""Unit tests for pipeline/tasks.py: specs, schema, and prompt builders."""
 import pytest
 
 from pipeline.tasks import (
     SPECIALIST_KEYS,
     AcquisitionReport,
     _SPECIALIST_SPECS,
-    build_strategist_task,
+    retry_prompt,
+    specialist_prompt,
+    strategist_prompt,
 )
+
+
 
 
 class TestSpecialistSpecsGuardrails:
@@ -50,58 +43,41 @@ class TestAcquisitionReportSchema:
     def test_missing_field_rejected(self):
         with pytest.raises(Exception):
             AcquisitionReport(bid_low="$0.5M", bid_fair="$0.8M", report_markdown="x")
+class TestSpecialistPrompt:
+    def test_formats_title_and_deliverable(self):
+        prompt = specialist_prompt("deals_researcher", "Sinners")
+        assert "'Sinners'" in prompt
+        assert "Deliverable:" in prompt
 
 
-@pytest.fixture
-def fake_crewai(monkeypatch):
-    """Injects a fake crewai module capturing Task(**kwargs) calls."""
-    created: list = []
-
-    class FakeTask:
-        def __init__(self, **kwargs):
-            self.kwargs = kwargs
-            created.append(self)
-
-    fake_module = types.ModuleType("crewai")
-    fake_module.Task = FakeTask
-    monkeypatch.setitem(sys.modules, "crewai", fake_module)
-    return created
+class TestRetryPrompt:
+    def test_includes_previous_answer_and_each_flagged_claim(self):
+        prompt = retry_prompt("buzz_analyst", "Sinners", "old answer", ["Gross was $9M.", "Score 91%."])
+        assert "old answer" in prompt
+        assert "- Gross was $9M." in prompt
+        assert "- Score 91%." in prompt
+        assert "Not publicly disclosed" in prompt
 
 
-class TestBuildStrategistTask:
-    def test_context_wired_to_specialist_tasks(self, fake_crewai):
-        specialist_tasks = {"document_analyst": object(), "talent_researcher": object()}
-        outputs = {"document_analyst": "some findings", "talent_researcher": "more findings"}
+class TestStrategistPrompt:
+    def test_includes_every_specialist_output(self):
+        outputs = {k: f"findings-{k}" for k in SPECIALIST_KEYS}
+        prompt = strategist_prompt("Sinners", outputs)
+        for k in SPECIALIST_KEYS:
+            assert f"findings-{k}" in prompt
 
-        build_strategist_task(agent=object(), film_title="Sinners", specialist_tasks=specialist_tasks, specialist_outputs=outputs)
+    def test_unverified_claims_are_discounted(self):
+        assert "[unverified]" in strategist_prompt("Sinners", {"document_analyst": "x"})
 
-        task = fake_crewai[0]
-        assert task.kwargs["context"] == list(specialist_tasks.values())
+    def test_no_incomplete_note_when_all_complete(self):
+        prompt = strategist_prompt("Sinners", {"document_analyst": "solid findings"})
+        assert "NOTE:" not in prompt
 
-    def test_output_pydantic_is_acquisition_report(self, fake_crewai):
-        build_strategist_task(
-            agent=object(), film_title="Sinners", specialist_tasks={}, specialist_outputs={}
-        )
-        assert fake_crewai[0].kwargs["output_pydantic"] is AcquisitionReport
-
-    def test_no_incomplete_note_when_all_complete(self, fake_crewai):
-        outputs = {"document_analyst": "solid findings"}
-        build_strategist_task(
-            agent=object(), film_title="Sinners", specialist_tasks={"document_analyst": object()}, specialist_outputs=outputs
-        )
-        assert "incomplete" not in fake_crewai[0].kwargs["description"].lower()
-
-    def test_incomplete_note_lists_failed_specialists(self, fake_crewai):
+    def test_incomplete_note_lists_failed_specialists(self):
         outputs = {
             "document_analyst": "solid findings",
             "buzz_analyst": "Research incomplete: a tool error prevented this research from completing.",
         }
-        build_strategist_task(
-            agent=object(),
-            film_title="Sinners",
-            specialist_tasks={"document_analyst": object(), "buzz_analyst": object()},
-            specialist_outputs=outputs,
-        )
-        description = fake_crewai[0].kwargs["description"]
-        assert "Buzz Analyst" in description
-        assert "Document Analyst" not in description.split("NOTE:")[1]
+        note = strategist_prompt("Sinners", outputs).split("NOTE:")[1].split("# Specialist research")[0]
+        assert "Buzz Analyst" in note
+        assert "Document Analyst" not in note

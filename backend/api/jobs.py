@@ -66,7 +66,7 @@ def start_job(job_id: str, pdf_paths: list[str]) -> Job | None:
             pass
 
     def run() -> None:
-        from pipeline.crew import run_pipeline
+        from pipeline.graph import run_pipeline
 
         try:
             run_pipeline(job_id, pdf_paths, emit, job.cancel)

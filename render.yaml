@@ -24,6 +24,15 @@ services:
         sync: false
       - key: TOKEN_SECRET
         generateValue: true
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      # Optional LangSmith tracing: set LANGSMITH_TRACING=true plus a key.
+      - key: LANGSMITH_TRACING
+        sync: false
+      - key: LANGSMITH_API_KEY
+        sync: false
       # CORS_ORIGIN_REGEX intentionally not declared here: leaving it unset
       # keeps the config.py default (matches any Vercel preview URL for this
       # project). Only add it if you need to override that pattern.

@@ -1,5 +1,5 @@
 """Integration tests for /api/analyze — auth and validation guards only.
-Does NOT invoke the real CrewAI pipeline.
+Does NOT invoke the real LangGraph pipeline.
 """
 import io
 import re

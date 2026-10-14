@@ -11,8 +11,12 @@ ENV PYTHONUNBUFFERED=1 \
     HOME=/home/appuser \
     PORT=10000
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --compile -r requirements.txt
+COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /bin/uv
+COPY pyproject.toml uv.lock .python-version ./
+# venv lives outside /app so the `chown -R /app` below doesn't duplicate it into a new layer
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+RUN uv sync --frozen --no-dev --compile-bytecode --no-cache
+ENV PATH="/opt/venv/bin:$PATH"
 
 COPY . .
 

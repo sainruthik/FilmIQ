@@ -1,6 +1,5 @@
 from typing import Callable
 
-import litellm
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 
@@ -37,6 +36,10 @@ def build_rag_chain(vector_store, chunks: list) -> Callable[[str], str]:
         c=60,
     )
 
+    from .llm import chat_with_fallback
+
+    llm = chat_with_fallback(settings.openai_worker_model, temperature=0.1, max_tokens=1024, timeout=60)
+
     def invoke(question: str) -> str:
         docs = retriever.invoke(question)
         context = _format_docs(docs)
@@ -44,13 +47,6 @@ def build_rag_chain(vector_store, chunks: list) -> Callable[[str], str]:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"},
         ]
-        resp = litellm.completion(
-            model=f"openai/{settings.openai_worker_model}",
-            api_key=settings.openai_api_key,
-            messages=messages,
-            temperature=0.1,
-            max_tokens=1024,
-        )
-        return resp.choices[0].message.content
+        return llm.invoke(messages).text
 
     return invoke

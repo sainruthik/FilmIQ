@@ -41,7 +41,7 @@ async def analyze_stream(
         raise HTTPException(status_code=401, detail="Unauthorized.")
 
     # Finished job: replay the persisted report instead of re-running.
-    from pipeline.crew import load_result
+    from pipeline.graph import load_result
 
     result = load_result(job_id)
     if result is not None:

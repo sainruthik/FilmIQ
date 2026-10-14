@@ -2,7 +2,6 @@ import re
 from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient
@@ -10,18 +9,7 @@ from qdrant_client.models import Distance, VectorParams
 
 from config import settings
 
-_embeddings: OpenAIEmbeddings | None = None
-
-
-def get_embeddings() -> OpenAIEmbeddings:
-    global _embeddings
-    if _embeddings is None:
-        _embeddings = OpenAIEmbeddings(
-            model=settings.embed_model,
-            openai_api_key=settings.openai_api_key,
-        )
-    return _embeddings
-
+from .llm import get_embeddings
 
 def collection_name(job_id: str) -> str:
     return f"film_{job_id[:12].replace('-', '')}"
@@ -51,6 +39,11 @@ def extract_film_title(pages: list) -> str:
     for line in lines:
         if line.startswith('"') or line.startswith("'"):
             continue
+        # "Sinners (2025) – OTT Platform Acquisition…": the title is what
+        # precedes the parenthesised year, not the next year-free line.
+        m = re.match(r"^(.{2,60}?)\s*\(((?:19|20)\d{2})\)", line)
+        if m:
+            return f"{m.group(1)} ({m.group(2)})"
         words = set(line.upper().split())
         if not words or words.issubset(genre_words):
             continue
@@ -75,7 +68,7 @@ def ingest_pdfs(job_id: str, pdf_paths: list[str]) -> tuple:
     chunks = splitter.split_documents(pages)
 
     film_title = extract_film_title(pages)
-    embeddings = get_embeddings()
+    embeddings, dim = get_embeddings()
     coll = collection_name(job_id)
 
     client = QdrantClient(url=settings.qdrant_host, api_key=settings.qdrant_api_key)
@@ -85,7 +78,7 @@ def ingest_pdfs(job_id: str, pdf_paths: list[str]) -> tuple:
 
     client.create_collection(
         collection_name=coll,
-        vectors_config=VectorParams(size=settings.embed_dim, distance=Distance.COSINE),
+        vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
     )
 
     vector_store = QdrantVectorStore.from_documents(
