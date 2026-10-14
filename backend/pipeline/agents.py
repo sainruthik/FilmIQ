@@ -177,7 +177,12 @@ def _configure_openai_profile() -> None:
         "openai",
         HarnessProfile(
             general_purpose_subagent=GeneralPurposeSubagentProfile(enabled=False),
-            excluded_tools=frozenset({"execute"}),
+            # The scratch filesystem was pure overhead on these short tasks: a
+            # traced run rewrote one "final" file 12 times (87 steps) before
+            # answering. Planning (write_todos) stays.
+            excluded_tools=frozenset(
+                {"execute", "ls", "read_file", "write_file", "edit_file", "glob", "grep", "delete"}
+            ),
         ),
     )
 
@@ -202,8 +207,8 @@ def build_specialists(rag_invoke: Callable[[str], str]) -> dict:
             system_prompt=(
                 f"{role}\n\nPlan your research with write_todos first (one todo per person, "
                 f"deal, or comparable you must cover), then work through it. You have a budget "
-                f"of about {budget} search calls. Your final message is your complete "
-                "deliverable — the files you write are scratch space and are not read by anyone."
+                f"of about {budget} search calls. When your todos are done, return your findings "
+                "through the response schema straight away."
             ),
             middleware=_middleware(temperature),
             # Tool-calling mode works on both OpenAI and the Groq fallback; Groq
