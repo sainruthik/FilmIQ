@@ -11,10 +11,16 @@ export interface AgentInfo {
   status: AgentStatus;
 }
 
+export type BidConfidence = "High" | "Medium" | "Low";
+
 export interface BidRange {
   low: string | null;
   fair: string | null;
   walk_away: string | null;
+  // Counted by the backend from comparable deals with a disclosed price;
+  // absent on reports persisted before this field existed.
+  confidence?: BidConfidence | null;
+  priced_comparables?: number | null;
 }
 
 export interface AnalysisState {
@@ -119,9 +125,16 @@ export function useAnalysis(jobId: string, filenameHint: string): AnalysisState 
           }
 
           case "complete": {
-            const raw = data.bid_range as Record<string, string> | undefined;
+            const raw = data.bid_range as Record<string, string | number> | undefined;
             const bidRange: BidRange | null = raw
-              ? { low: raw.low ?? null, fair: raw.fair ?? null, walk_away: raw.walk_away ?? null }
+              ? {
+                  low: (raw.low as string) ?? null,
+                  fair: (raw.fair as string) ?? null,
+                  walk_away: (raw.walk_away as string) ?? null,
+                  confidence: (raw.confidence as BidConfidence) ?? null,
+                  priced_comparables:
+                    typeof raw.priced_comparables === "number" ? raw.priced_comparables : null,
+                }
               : null;
             return {
               ...prev,

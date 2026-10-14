@@ -112,6 +112,25 @@ function BidPanel({
   );
 }
 
+const CONFIDENCE_COLOR: Record<NonNullable<BidRange["confidence"]>, string> = {
+  High: "rgba(74,222,128,0.85)",
+  Medium: "#c9a84c",
+  Low: "rgba(248,113,113,0.85)",
+};
+
+function ConfidenceBadge({ level, priced }: { level: NonNullable<BidRange["confidence"]>; priced: number }) {
+  const color = CONFIDENCE_COLOR[level];
+  return (
+    <span
+      className="mt-1 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-sans font-semibold uppercase tracking-[0.18em]"
+      style={{ color, border: `1px solid ${color}`, background: "rgba(0,0,0,0.25)" }}
+      title="Counted from comparable deals with a disclosed price: High 2+, Medium 1, Low none"
+    >
+      {level} confidence · {priced} priced comparable{priced === 1 ? "" : "s"}
+    </span>
+  );
+}
+
 function BidRangeCard({ bid }: { bid: BidRange | null }) {
   if (!bid || (!bid.low && !bid.fair && !bid.walk_away)) return null;
 
@@ -171,6 +190,7 @@ function BidRangeCard({ bid }: { bid: BidRange | null }) {
         >
           Recommended Bid Range
         </p>
+        {bid.confidence && <ConfidenceBadge level={bid.confidence} priced={bid.priced_comparables ?? 0} />}
       </div>
 
       {/* ── Three panels ── */}

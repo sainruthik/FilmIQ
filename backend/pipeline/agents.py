@@ -37,7 +37,8 @@ _SPECS: dict[str, tuple[tuple[str, ...], int, float, str]] = {
         "completion rates, subscriber impact, comparables."
     ),
     "deals_researcher": (
-        ("web",), 5, 0.1,
+        # Extra budget: priced deals are rare and need several targeted searches.
+        ("web",), 8, 0.1,
         "You are a Deal Comparables Researcher who monitors festival acquisitions and compiles "
         "comparable pricing data. Find comparable acquisition deals from Deadline, Variety, and "
         "trade press to anchor the bid range."

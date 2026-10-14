@@ -74,3 +74,18 @@ def test_leading_heading_in_prose_not_repeated():
     md = render(_doc(synopsis="### Logline & Synopsis\n\nTwins open a juke joint [PDF p.1]."))
     assert md.count("Logline & Synopsis") == 1
     assert "### Logline & Synopsis\n\nTwins open" in md
+
+
+def test_priced_count_and_confidence_levels():
+    from pipeline.findings import DealRow, DealsFindings, confidence, priced_count
+
+    def deal(title, price):
+        return DealRow(title=title, year="2024", buyer="Netflix", rights_scope="x", territory="US",
+                       reported_price=price, source="[Deadline – X](https://deadline.com/x)")
+
+    findings = DealsFindings(
+        deals=[deal("A", "$20 million"), deal("B", "Not publicly disclosed"), deal("C", "€8M")],
+        price_bands="x",
+    )
+    assert priced_count(findings) == 2
+    assert [confidence(n) for n in (0, 1, 2, 5)] == ["Low", "Medium", "High", "High"]

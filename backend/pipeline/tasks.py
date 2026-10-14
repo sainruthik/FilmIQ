@@ -46,9 +46,15 @@ _SPECIALIST_SPECS: dict[str, str] = {
         + _ACCURACY_GUARDRAIL
     ),
     "deals_researcher": (
-        "Find acquisition and licensing deal comparables for '{title}'. Search Deadline, "
-        "Variety, and trade press for: comparable films' streaming/pay-TV licences and festival "
-        "sales, reported prices, buyer, rights scope, and territory."
+        "Find priced licensing and acquisition deals for OTHER films comparable to '{title}' "
+        "(similar genre, budget tier, or post-theatrical window) — never '{title}' itself, and "
+        "never its production budget or box office. Run targeted searches for disclosed prices, "
+        "e.g. 'Netflix paid million streaming rights film', 'pay-1 licensing deal price', "
+        "'streaming rights sold for million horror', 'festival acquisition record price', "
+        "on Deadline, Variety, The Hollywood Reporter, and The Ankler. A reported_price is only "
+        "a dollar figure the cited article states for that deal. If you find no priced "
+        "comparables, return the unpriced ones you have and say plainly in price_bands that no "
+        "disclosed prices were found."
         + _ACCURACY_GUARDRAIL
     ),
     "buzz_analyst": (
@@ -121,7 +127,7 @@ def retry_prompt(key: str, film_title: str, previous: str, uncited: list[str]) -
     )
 
 
-def strategist_prompt(film_title: str, specialist_outputs: dict[str, str]) -> str:
+def strategist_prompt(film_title: str, specialist_outputs: dict[str, str], priced_comparables: int = 0) -> str:
     incomplete = [
         key.replace("_", " ").title()
         for key, output in specialist_outputs.items()
@@ -156,7 +162,10 @@ def strategist_prompt(film_title: str, specialist_outputs: dict[str, str]) -> st
         "plainly in each rationale that the figure is an estimate not anchored to a disclosed "
         "deal, and name the data that would firm it up. Never claim a title 'fetched similar "
         "figures' unless its price is in the research.\n"
-        "- Write field text without headings; the report adds them.\n\n"
+        "- Write field text without headings; the report adds them.\n"
+        f"- The research found {priced_comparables} comparable deal(s) with a disclosed price. "
+        "With fewer than two, every scenario is an estimate: say so in the executive summary and "
+        "keep the ranges wide rather than precise.\n\n"
         "Evidence rules:\n"
         "- When the uploaded documents and web research disagree on a figure, use the "
         "document's value and record the conflict in source_conflicts.\n"

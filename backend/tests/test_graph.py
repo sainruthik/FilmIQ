@@ -58,7 +58,7 @@ class TestGraph:
     def test_all_cited_skips_retry(self):
         final, specialists, strategist, events = _run()
 
-        assert final["bid_range"] == {"low": "$1M", "fair": "$2M", "walk_away": "$3M"}
+        assert final["bid_range"] == {"low": "$1M", "fair": "$2M", "walk_away": "$3M", "confidence": "Low", "priced_comparables": 0}
         assert final["report"].startswith("# Acquisition Report: Sinners")
         assert final["citation_coverage"] == {"before": 1.0, "after": 1.0}
         assert all(len(s.prompts) == 1 for s in specialists.values())
@@ -221,3 +221,31 @@ class TestStructuredSpecialist:
         final, _, strategist, _ = _run({"deals_researcher": Structured(CITED)})
         assert "| Film X | 2024 | Netflix |" in strategist.prompt
         assert "### Comparable Deals" in final["report"]
+
+
+class TestBidConfidence:
+    def _deals_specialist(self, prices):
+        from pipeline.findings import DealRow, DealsFindings
+
+        rows = [DealRow(title=f"Film {i}", year="2024", buyer="Netflix", rights_scope="Excl SVOD",
+                        territory="US", reported_price=p, source="[Deadline – X](https://deadline.com/x)")
+                for i, p in enumerate(prices)]
+        findings = DealsFindings(deals=rows, price_bands="Per cited deals.")
+
+        class Structured(FakeSpecialist):
+            async def ainvoke(self, inp):
+                self.prompts.append(inp["messages"][0]["content"])
+                return {"messages": [AIMessage(content="")], "structured_response": findings}
+
+        return Structured(CITED)
+
+    def test_confidence_counted_from_priced_deals(self):
+        final, _, strategist, _ = _run({"deals_researcher": self._deals_specialist(["$20M", "$12M"])})
+        assert final["bid_range"]["confidence"] == "High"
+        assert final["bid_range"]["priced_comparables"] == 2
+        assert "Bid confidence: High" in final["report"]
+        assert "found 2 comparable deal(s)" in strategist.prompt
+
+    def test_no_priced_deals_is_low(self):
+        final, _, _, _ = _run({"deals_researcher": self._deals_specialist(["Not publicly disclosed"])})
+        assert final["bid_range"]["confidence"] == "Low"

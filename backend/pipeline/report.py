@@ -49,7 +49,13 @@ def bid_range(report: AcquisitionReport) -> dict[str, str]:
     }
 
 
-def assemble(film_title: str, outputs: dict[str, str], report: AcquisitionReport) -> str:
+def assemble(
+    film_title: str,
+    outputs: dict[str, str],
+    report: AcquisitionReport,
+    confidence: str = "Low",
+    priced_comparables: int = 0,
+) -> str:
     sections = [
         ("Executive Summary", _body(report.executive_summary)),
         ("Investment Thesis", _body(report.investment_thesis)),
@@ -57,6 +63,8 @@ def assemble(film_title: str, outputs: dict[str, str], report: AcquisitionReport
         (
             "Bid Scenarios & Recommendation",
             "\n\n".join([
+                f"**Bid confidence: {confidence}** — anchored to {priced_comparables} comparable "
+                "deal(s) with a disclosed price (High: 2+, Medium: 1, Low: none).",
                 _scenario("Conservative", report.conservative),
                 _scenario("Base case", report.base_case),
                 _scenario("Aggressive", report.aggressive),

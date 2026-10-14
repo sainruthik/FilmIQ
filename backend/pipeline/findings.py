@@ -183,6 +183,21 @@ def _dedupe(rows: list[BaseModel]) -> list[BaseModel]:
     return unique
 
 
+_PRICE_RE = re.compile(r"[$£€]\s?\d")
+
+
+def priced_count(findings: BaseModel) -> int:
+    """Comparable deals with a disclosed dollar price; drives bid confidence."""
+    if not isinstance(findings, DealsFindings):
+        return 0
+    return sum(1 for d in _dedupe(findings.deals) if _PRICE_RE.search(d.reported_price))
+
+
+def confidence(priced: int) -> str:
+    """Set by code, not the model: how many priced comparables anchor the bids."""
+    return "High" if priced >= 2 else "Medium" if priced == 1 else "Low"
+
+
 def without_title(findings: BaseModel, film_title: str) -> BaseModel:
     """Drop deal rows about the film under analysis: it can't be its own comparable."""
     if not isinstance(findings, DealsFindings):

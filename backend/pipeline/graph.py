@@ -19,7 +19,7 @@ import traceback
 from pathlib import Path
 from typing import Annotated, Callable, TypedDict
 
-from .findings import render, without_title
+from .findings import confidence, priced_count, render, without_title
 from .report import assemble, bid_range
 from .tasks import SPECIALIST_KEYS, retry_prompt, specialist_prompt, strategist_prompt
 from .verifier import coverage, find_uncited, tag_unverified
@@ -47,6 +47,7 @@ class PipelineState(TypedDict, total=False):
     citation_coverage: dict[str, float]
     bid_range: dict[str, str]
     report: str
+    priced_comps: int
 
 
 def _result_path(job_id: str) -> Path:
@@ -79,12 +80,16 @@ def build_graph(specialists: dict, strategist, emit: Callable[[dict], None]):
 
     async def specialist(task: dict) -> dict:
         key, is_retry = task["key"], task.get("retry", False)
+        extra: dict = {}
         try:
             result = await asyncio.wait_for(
                 specialists[key].ainvoke({"messages": [{"role": "user", "content": task["prompt"]}]}),
                 timeout=_SPECIALIST_DEADLINE_SECONDS,
             )
             structured = result.get("structured_response")
+            if structured is not None and key == "deals_researcher":
+                structured = without_title(structured, task.get("film_title", ""))
+                extra["priced_comps"] = priced_count(structured)
             # Typed findings render to fixed headings/tables; plain text is the
             # fallback if a model ever answers without the schema.
             output = (
@@ -110,9 +115,9 @@ def build_graph(specialists: dict, strategist, emit: Callable[[dict], None]):
 
         if is_retry:
             # A failed retry keeps the first answer; the verifier tags it instead.
-            return {} if _is_incomplete(output) else {"outputs": {key: output}}
+            return {} if _is_incomplete(output) else {"outputs": {key: output}, **extra}
         emit({"type": "agent_done", "agent": key.replace("_", " ").title()})
-        return {"outputs": {key: output}}
+        return {"outputs": {key: output}, **extra}
 
     def verify(state: PipelineState) -> dict:
         outputs = state["outputs"]
@@ -162,10 +167,12 @@ def build_graph(specialists: dict, strategist, emit: Callable[[dict], None]):
     async def strategist_node(state: PipelineState) -> dict:
         emit({"type": "strategist_start", "message": "Synthesizing all findings…"})
         ordered = {key: state["outputs"][key] for key in SPECIALIST_KEYS}
-        report = await strategist.ainvoke(strategist_prompt(state["film_title"], ordered))
+        priced = state.get("priced_comps", 0)
+        level = confidence(priced)
+        report = await strategist.ainvoke(strategist_prompt(state["film_title"], ordered, priced))
         return {
-            "bid_range": bid_range(report),
-            "report": assemble(state["film_title"], ordered, report),
+            "bid_range": {**bid_range(report), "confidence": level, "priced_comparables": priced},
+            "report": assemble(state["film_title"], ordered, report, level, priced),
         }
 
     def fan_out(state: PipelineState):
