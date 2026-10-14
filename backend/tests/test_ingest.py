@@ -20,5 +20,8 @@ def test_screenplay_style_title_page_still_works():
 
 def test_schema_has_no_example_bid_figures():
     # Example figures in field descriptions got copied verbatim as the bid.
-    for name in ("bid_low", "bid_fair", "bid_walk_away"):
-        assert "$" not in AcquisitionReport.model_fields[name].description
+    from pipeline.tasks import BidScenario
+
+    descriptions = [f.description or "" for f in AcquisitionReport.model_fields.values()]
+    descriptions += [f.description or "" for f in BidScenario.model_fields.values()]
+    assert not any("$" in d for d in descriptions)

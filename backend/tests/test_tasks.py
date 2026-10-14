@@ -1,6 +1,8 @@
 """Unit tests for pipeline/tasks.py: specs, schema, and prompt builders."""
 import pytest
 
+from tests.factories import sample_report
+
 from pipeline.tasks import (
     SPECIALIST_KEYS,
     AcquisitionReport,
@@ -15,15 +17,15 @@ from pipeline.tasks import (
 
 class TestSpecialistSpecsGuardrails:
     def test_every_spec_has_accuracy_guardrail(self):
-        for key, (desc, _) in _SPECIALIST_SPECS.items():
+        for key, desc in _SPECIALIST_SPECS.items():
             assert "Not publicly disclosed" in desc, key
 
     def test_talent_researcher_excludes_controversies(self):
-        desc = _SPECIALIST_SPECS["talent_researcher"][0]
+        desc = _SPECIALIST_SPECS["talent_researcher"]
         assert "Risk Analyst" in desc
 
     def test_risk_analyst_owns_controversies(self):
-        desc = _SPECIALIST_SPECS["risk_analyst"][0]
+        desc = _SPECIALIST_SPECS["risk_analyst"]
         assert "Talent Researcher" in desc
 
     def test_all_specialist_keys_have_specs(self):
@@ -32,22 +34,35 @@ class TestSpecialistSpecsGuardrails:
 
 class TestAcquisitionReportSchema:
     def test_valid_report_parses(self):
-        report = AcquisitionReport(
-            bid_low="$0.5M",
-            bid_fair="$0.8M-$1.0M",
-            bid_walk_away="$1.2M",
-            report_markdown="# Report",
-        )
-        assert report.bid_low == "$0.5M"
+        assert sample_report().base_case.price == "$2M"
 
     def test_missing_field_rejected(self):
         with pytest.raises(Exception):
-            AcquisitionReport(bid_low="$0.5M", bid_fair="$0.8M", report_markdown="x")
+            AcquisitionReport(executive_summary="x")
+
+
+class TestSpecialistPromptRules:
+    def test_every_prompt_requires_named_links_and_schema(self):
+        for key in SPECIALIST_KEYS:
+            prompt = specialist_prompt(key, "Sinners")
+            assert "never a bare" in prompt, key
+            assert "response schema" in prompt, key
+
+
+class TestStrategistBidRules:
+    def test_rights_and_comparables_drive_price(self):
+        prompt = strategist_prompt("Sinners", {"document_analyst": "x"})
+        assert "rights and windowing" in prompt
+        assert "comparable deals" in prompt
+        assert "break-even" in prompt  # never used as a price
+        assert "source_conflicts" in prompt
+
+
 class TestSpecialistPrompt:
     def test_formats_title_and_deliverable(self):
         prompt = specialist_prompt("deals_researcher", "Sinners")
         assert "'Sinners'" in prompt
-        assert "Deliverable:" in prompt
+        assert "response schema" in prompt
 
 
 class TestRetryPrompt:

@@ -17,20 +17,35 @@ _FIGURE_RE = re.compile(
     re.IGNORECASE,
 )
 # Accepts page ranges/lists too: [PDF p.3-4], [PDF pp.3-4], [PDF p.3, p.5].
-_CITATION_RE = re.compile(r"\[PDF pp?\.\s?\d+[^\]]*\]|\]\(https?://", re.IGNORECASE)
+# A link only counts when it is named: [Source](url) or [link](url) says
+# nothing about where the figure came from.
+_CITATION_RE = re.compile(
+    r"\[PDF pp?\.\s?\d+[^\]]*\]"
+    r"|\[(?!\s*(?:sources?|link|here|read more|view[^\]]*)\s*\])[^\]\n]+\]\(https?://",
+    re.IGNORECASE,
+)
 # No split before "[": a citation placed after the period ("$20M. [PDF p.3]")
 # stays attached to the sentence it sources. Captures the separator so
 # tag_unverified can rebuild the text exactly.
-_SENTENCE_SPLIT_RE = re.compile(r"((?<=[.!?])\s+(?=[A-Z*_\"'(]))")
+# No split after a lone initial either ("Michael B. Jordan", "U.S. SVOD").
+_SENTENCE_SPLIT_RE = re.compile(r"((?<=[.!?])(?<!\b[A-Z]\.)\s+(?=[A-Z*_\"'(]))")
 
 UNVERIFIED_TAG = "[unverified]"
+
+
+def _split(line: str) -> list[str]:
+    """Sentences interleaved with their separators; a table row is one claim
+    (its citation usually sits in the last cell)."""
+    if line.lstrip().startswith("|"):
+        return [line]
+    return _SENTENCE_SPLIT_RE.split(line)
 
 
 def _claims(text: str) -> list[str]:
     sentences = (
         s.strip()
         for line in text.splitlines()
-        for s in _SENTENCE_SPLIT_RE.split(line)[::2]
+        for s in _split(line)[::2]
     )
     return [s for s in sentences if _FIGURE_RE.search(s)]
 
@@ -77,6 +92,6 @@ def tag_unverified(text: str) -> str:
         return f"{s} {UNVERIFIED_TAG}"
 
     return "\n".join(
-        "".join(tag(part) if i % 2 == 0 else part for i, part in enumerate(_SENTENCE_SPLIT_RE.split(line)))
+        "".join(tag(part) if i % 2 == 0 else part for i, part in enumerate(_split(line)))
         for line in text.split("\n")
     )

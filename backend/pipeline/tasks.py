@@ -19,79 +19,92 @@ _ACCURACY_GUARDRAIL = (
     "social, or streaming metric you cite — this data goes stale within weeks."
 )
 
-_SPECIALIST_SPECS: dict[str, tuple[str, str]] = {
+# Appended to every deliverable: named links are what the reference list and
+# the citation verifier rely on.
+_LINK_RULE = (
+    " Cite every web source as a named markdown link [Publisher – Article title](url), "
+    'never a bare "Source" or "link" label. Label document claims [PDF p.N].'
+)
+
+_SPECIALIST_SPECS: dict[str, str] = {
     "document_analyst": (
         "Analyse the uploaded documents for '{title}'. Extract: plot summary, genre, tone, "
-        "target audience, key themes, production budget, and rights/territory structure."
-        + _ACCURACY_GUARDRAIL,
-        "Structured coverage with every factual claim labeled [PDF p.N]: synopsis, genre/tone, "
-        "audience fit, budget, rights availability.",
+        "target audience, key themes, production budget and financials, and the full "
+        "rights/territory/windowing position (what is already licensed, to whom, until when)."
+        + _ACCURACY_GUARDRAIL
     ),
     "talent_researcher": (
         "Research the director and lead cast of '{title}'. Use documents for names, then web "
         "search for: past film box office, streaming performance, awards, social following, "
         "and recent trajectory. Cover commercial value only — do not report on cast/director "
         "controversies or scandals, that is the Risk Analyst's exclusive territory."
-        + _ACCURACY_GUARDRAIL,
-        "Director track record + per-actor commercial value. Label doc claims [PDF p.N]. "
-        "Cite all web sources as markdown hyperlinks in format [Source Name](url).",
+        + _ACCURACY_GUARDRAIL
     ),
     "market_analyst": (
         "Benchmark '{title}' genre against streaming data. Find: comparable films, streaming "
         "completion rates, subscriber acquisition impact, and regional performance trends."
-        + _ACCURACY_GUARDRAIL,
-        "Genre benchmark report with 3–5 comparable titles and streaming metrics. "
-        "Cite all web sources as markdown hyperlinks in format [Source Name](url).",
+        + _ACCURACY_GUARDRAIL
     ),
     "deals_researcher": (
-        "Find acquisition deal comparables for '{title}'. Search Deadline, Variety, and trade "
-        "press for: similar films sold at recent festivals, reported prices, buyer, and "
-        "territory breakdown."
-        + _ACCURACY_GUARDRAIL,
-        "Table of 3–5 comparable deals with price, buyer, festival, and territory. "
-        "Cite all web sources as markdown hyperlinks in format [Source Name](url).",
+        "Find acquisition and licensing deal comparables for '{title}'. Search Deadline, "
+        "Variety, and trade press for: comparable films' streaming/pay-TV licences and festival "
+        "sales, reported prices, buyer, rights scope, and territory."
+        + _ACCURACY_GUARDRAIL
     ),
     "buzz_analyst": (
-        "Aggregate current buzz for '{title}'. Search for: festival reviews, critic scores, "
-        "trade press coverage, and social sentiment. Summarise overall sentiment and key "
-        "narratives."
-        + _ACCURACY_GUARDRAIL,
-        "Buzz report: sentiment score, top critic quotes, social indicators, coverage volume. "
-        "Cite all web sources as markdown hyperlinks in format [Source Name](url).",
+        "Aggregate reception for '{title}'. Search for: critic scores, audience scores, "
+        "festival and awards coverage, trade press, and social sentiment."
+        + _ACCURACY_GUARDRAIL
     ),
     "risk_analyst": (
-        "Identify risk factors for acquiring '{title}'. Check: production issues, cast "
-        "controversies, rights disputes, competing releases in same genre window, and "
-        "audience risk. You own all controversy/scandal coverage exclusively — the Talent "
-        "Researcher does not report on this."
-        + _ACCURACY_GUARDRAIL,
-        "Risk register: flagged risks, severity (high/med/low), mitigation notes. "
-        "Label doc claims [PDF p.N]. Cite web sources as markdown hyperlinks [Source Name](url).",
+        "Identify risk factors for acquiring '{title}'. Check: rights and windowing constraints, "
+        "existing licensee conflicts, cast controversies, competing releases, audience/rating "
+        "limits, and catalogue decay. Ground risks in the uploaded documents first and skip "
+        "generic risks that do not apply to this film. You own all controversy/scandal "
+        "coverage exclusively — the Talent Researcher does not report on this."
+        + _ACCURACY_GUARDRAIL
     ),
 }
 
 
-class AcquisitionReport(BaseModel):
-    """Structured strategist output, enforced by OpenAI structured output so
-    the bid figures can never end up malformed or missing for the client."""
+class BidScenario(BaseModel):
+    rights_structure: str = Field(
+        description="Exclusivity, territories, window and term this price buys, consistent with "
+        "the rights position in the documents"
+    )
+    price: str = Field(description="Short USD string in millions: one figure or a range")
+    rationale: str = Field(
+        description="Markdown paragraph pricing this scenario off the cited comparable deals"
+    )
 
-    # No concrete example figures here: the model copied them verbatim as
-    # the bid. Format hints only; the numbers must come from the research.
-    bid_low: str = Field(description="Low bid: a short USD string in millions, derived from the deal comparables")
-    bid_fair: str = Field(description="Fair value bid range: a short USD range string in millions")
-    bid_walk_away: str = Field(description="Walk-away ceiling bid: a short USD string in millions")
-    report_markdown: str = Field(
-        description=(
-            "Full markdown acquisition report covering all 8 required sections, including a "
-            "'Recommended Bid Range' section with full justification paragraphs for the "
-            "bid_low/bid_fair/bid_walk_away figures."
-        )
+
+class AcquisitionReport(BaseModel):
+    """Strategist output. The evidence sections come from the specialists
+    verbatim; the strategist writes only what needs every finding at once.
+    No concrete example figures in descriptions: the model copies them."""
+
+    executive_summary: str = Field(description="Markdown, 2-3 paragraphs: the film, the deal, the call")
+    investment_thesis: str = Field(description="Markdown bullet list: reasons to acquire, reasons not to")
+    conservative: BidScenario
+    base_case: BidScenario
+    aggressive: BidScenario
+    walk_away_ceiling: str = Field(
+        description="Single USD figure in millions above which to walk away; the top of the aggressive scenario"
+    )
+    recommendation: str = Field(description="Markdown: which scenario to lead with and the negotiating posture")
+    source_conflicts: list[str] = Field(
+        description="Each place the documents and web research disagree, and which value was used; empty if none"
     )
 
 
 def specialist_prompt(key: str, film_title: str) -> str:
-    desc, expected = _SPECIALIST_SPECS[key]
-    return f"{desc.format(title=film_title)}\n\nDeliverable: {expected}"
+    # Structure comes from the response schema (pipeline/findings.py); the
+    # prompt only says what to research and how to cite.
+    return (
+        f"{_SPECIALIST_SPECS[key].format(title=film_title)}{_LINK_RULE}\n\n"
+        "Return your findings in the response schema. Fill every field; each table row "
+        "needs its own source."
+    )
 
 
 def retry_prompt(key: str, film_title: str, previous: str, uncited: list[str]) -> str:
@@ -100,11 +113,11 @@ def retry_prompt(key: str, film_title: str, previous: str, uncited: list[str]) -
     return (
         f"{specialist_prompt(key, film_title)}\n\n"
         f"Your previous answer was:\n\n{previous}\n\n"
-        "A citation check flagged these sentences for stating a figure with no citation:\n"
+        "A citation check flagged these sentences for stating a figure without a named citation:\n"
         f"{flagged}\n\n"
         "Rewrite your complete answer. For each flagged sentence, either back the figure with "
-        "a citation ([PDF p.N] or a markdown hyperlink [Source Name](url) — search again if "
-        'needed) or replace the figure with "Not publicly disclosed". Keep everything else.'
+        "a citation ([PDF p.N] or a named link [Publisher – Article title](url) — search again "
+        'if needed) or replace the figure with "Not publicly disclosed". Keep everything else.'
     )
 
 
@@ -116,9 +129,8 @@ def strategist_prompt(film_title: str, specialist_outputs: dict[str, str]) -> st
     ]
     incomplete_note = (
         "\n\nNOTE: research for the following areas came back incomplete (rate-limited, "
-        f"timed out, or errored): {', '.join(incomplete)}. Say so explicitly in the relevant "
-        "report section instead of presenting placeholder text as fact, and reflect the "
-        "reduced confidence in your bid-range justification."
+        f"timed out, or errored): {', '.join(incomplete)}. Say so in the executive summary and "
+        "reflect the reduced confidence in every scenario."
         if incomplete
         else ""
     )
@@ -128,20 +140,27 @@ def strategist_prompt(film_title: str, specialist_outputs: dict[str, str]) -> st
     )
 
     return (
-        f"Synthesise the specialist research below into a final acquisition report for "
-        f"'{film_title}' with these sections:\n"
-        "1. Story & Genre Analysis\n"
-        "2. Director Track Record\n"
-        "3. Cast Value Score\n"
-        "4. Genre & Market Performance\n"
-        "5. Festival & Critic Buzz\n"
-        "6. Risk Flags\n"
-        "7. Recommended Bid Range — include full justification paragraphs.\n"
-        "8. References — numbered markdown list of all web hyperlinks: [Source Name](url)\n\n"
-        "Preserve source labels [PDF p.N] and all markdown hyperlinks from the specialist "
-        "research. Never state a specific number without a citation from that research; "
-        "if a specialist could not confirm a figure, say so rather than estimating. Claims "
-        "tagged [unverified] failed a citation check: give them no weight in the bid range "
-        "and do not repeat them as fact."
+        f"You are the acquisitions strategist for an OTT platform evaluating '{film_title}'. "
+        "The specialist research below is published in the report as-is; do not restate it. "
+        "Write only the synthesis fields of the schema.\n\n"
+        "Bid rules:\n"
+        "- Price what a new platform can actually acquire. Take the rights and windowing "
+        "position from the Document Analyst; if exclusive first-run rights are already "
+        "licensed elsewhere, no scenario may assume them.\n"
+        "- Price each scenario off the Deals Researcher's comparable deals for a similar "
+        "rights scope, and cite those deals in the rationale.\n"
+        "- Never use production budget, theatrical gross, or break-even figures as a licence "
+        "price; they are inputs to the reasoning, not prices.\n"
+        "- Conservative <= base case <= aggressive <= walk_away_ceiling.\n"
+        "- A comparable only anchors a price if it has a disclosed price. If none do, say "
+        "plainly in each rationale that the figure is an estimate not anchored to a disclosed "
+        "deal, and name the data that would firm it up. Never claim a title 'fetched similar "
+        "figures' unless its price is in the research.\n"
+        "- Write field text without headings; the report adds them.\n\n"
+        "Evidence rules:\n"
+        "- When the uploaded documents and web research disagree on a figure, use the "
+        "document's value and record the conflict in source_conflicts.\n"
+        "- Claims tagged [unverified] failed a citation check: give them no weight.\n"
+        "- Keep [PDF p.N] labels and named markdown links when you cite evidence."
         f"{incomplete_note}\n\n# Specialist research\n\n{research}"
     )

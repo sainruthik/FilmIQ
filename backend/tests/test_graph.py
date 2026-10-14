@@ -10,8 +10,9 @@ from langchain_core.messages import AIMessage
 
 from pipeline import graph as graph_mod
 from pipeline.graph import Cancelled, _result_path, build_graph, load_result
-from pipeline.tasks import SPECIALIST_KEYS, AcquisitionReport
+from pipeline.tasks import SPECIALIST_KEYS
 from pipeline.verifier import UNVERIFIED_TAG
+from tests.factories import sample_report
 
 CITED = "Budget was $4M [PDF p.2]."
 UNCITED = "Gross was $9M."
@@ -40,7 +41,7 @@ class FakeStrategist:
 
     async def ainvoke(self, prompt):
         self.prompt = prompt
-        return AcquisitionReport(bid_low="$1M", bid_fair="$2M", bid_walk_away="$3M", report_markdown="# R")
+        return sample_report()
 
 
 def _run(overrides=None):
@@ -58,7 +59,7 @@ class TestGraph:
         final, specialists, strategist, events = _run()
 
         assert final["bid_range"] == {"low": "$1M", "fair": "$2M", "walk_away": "$3M"}
-        assert final["report"] == "# R"
+        assert final["report"].startswith("# Acquisition Report: Sinners")
         assert final["citation_coverage"] == {"before": 1.0, "after": 1.0}
         assert all(len(s.prompts) == 1 for s in specialists.values())
         assert sum(e["type"] == "agent_done" for e in events) == 6
@@ -200,3 +201,23 @@ class TestJobStreaming:
             assert job.subscribers == set()
 
         asyncio.run(scenario())
+
+
+class TestStructuredSpecialist:
+    def test_structured_response_is_rendered_into_report(self):
+        from pipeline.findings import DealRow, DealsFindings
+
+        findings = DealsFindings(
+            deals=[DealRow(title="Film X", year="2024", buyer="Netflix", rights_scope="Exclusive SVOD",
+                           territory="US", reported_price="$20M", source="[Deadline – X sale](https://deadline.com/x)")],
+            price_bands="Exclusive US ~$20M per the cited deal.",
+        )
+
+        class Structured(FakeSpecialist):
+            async def ainvoke(self, inp):
+                self.prompts.append(inp["messages"][0]["content"])
+                return {"messages": [AIMessage(content="")], "structured_response": findings}
+
+        final, _, strategist, _ = _run({"deals_researcher": Structured(CITED)})
+        assert "| Film X | 2024 | Netflix |" in strategist.prompt
+        assert "### Comparable Deals" in final["report"]

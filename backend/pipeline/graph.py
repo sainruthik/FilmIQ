@@ -19,6 +19,8 @@ import traceback
 from pathlib import Path
 from typing import Annotated, Callable, TypedDict
 
+from .findings import render, without_title
+from .report import assemble, bid_range
 from .tasks import SPECIALIST_KEYS, retry_prompt, specialist_prompt, strategist_prompt
 from .verifier import coverage, find_uncited, tag_unverified
 
@@ -82,7 +84,14 @@ def build_graph(specialists: dict, strategist, emit: Callable[[dict], None]):
                 specialists[key].ainvoke({"messages": [{"role": "user", "content": task["prompt"]}]}),
                 timeout=_SPECIALIST_DEADLINE_SECONDS,
             )
-            output = result["messages"][-1].text
+            structured = result.get("structured_response")
+            # Typed findings render to fixed headings/tables; plain text is the
+            # fallback if a model ever answers without the schema.
+            output = (
+                render(without_title(structured, task.get("film_title", "")))
+                if structured is not None
+                else result["messages"][-1].text
+            )
             if not output.strip():
                 logger.warning("Specialist %s returned an empty final message", key)
                 output = _TOOL_ERROR
@@ -143,6 +152,7 @@ def build_graph(specialists: dict, strategist, emit: Callable[[dict], None]):
         return [
             Send("specialist", {
                 "key": key,
+                "film_title": state["film_title"],
                 "retry": True,
                 "prompt": retry_prompt(key, state["film_title"], state["outputs"][key], claims),
             })
@@ -154,13 +164,16 @@ def build_graph(specialists: dict, strategist, emit: Callable[[dict], None]):
         ordered = {key: state["outputs"][key] for key in SPECIALIST_KEYS}
         report = await strategist.ainvoke(strategist_prompt(state["film_title"], ordered))
         return {
-            "bid_range": {"low": report.bid_low, "fair": report.bid_fair, "walk_away": report.bid_walk_away},
-            "report": report.report_markdown,
+            "bid_range": bid_range(report),
+            "report": assemble(state["film_title"], ordered, report),
         }
 
     def fan_out(state: PipelineState):
         return [
-            Send("specialist", {"key": key, "prompt": specialist_prompt(key, state["film_title"])})
+            Send("specialist", {
+                "key": key, "film_title": state["film_title"],
+                "prompt": specialist_prompt(key, state["film_title"]),
+            })
             for key in SPECIALIST_KEYS
         ]
 

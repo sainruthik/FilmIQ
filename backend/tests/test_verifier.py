@@ -66,3 +66,12 @@ class TestTagUnverified:
     def test_duplicate_claims_are_each_tagged(self):
         tagged = tag_unverified("Gross was $9M.\nGross was $9M.")
         assert tagged == f"Gross was $9M {UNVERIFIED_TAG}.\nGross was $9M {UNVERIFIED_TAG}."
+
+
+class TestSplitting:
+    def test_initial_does_not_split_sentence(self):
+        assert find_uncited("Michael B. Jordan films grossed $2.75 billion [Wikipedia – MBJ](https://w.org/m).") == []
+
+    def test_table_row_citation_in_last_cell_covers_row(self):
+        row = "| Michael B. Jordan | Creed | $2.75 billion+ | [Michael B. Jordan – Wikipedia](https://w.org/m) |"
+        assert find_uncited(row) == []

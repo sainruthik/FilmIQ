@@ -74,7 +74,7 @@ def _middleware(temperature: float) -> list:
 
     from .llm import groq_chat
 
-    fallback = groq_chat(temperature, max_tokens=2000, timeout=60)
+    fallback = groq_chat(temperature, max_tokens=4000, timeout=60)
     return [TodoListMiddleware()] + ([ModelFallbackMiddleware(fallback)] if fallback else [])
 
 
@@ -164,6 +164,8 @@ def build_specialists(rag_invoke: Callable[[str], str]) -> dict:
     """Returns {key: compiled deep agent} for the six specialists."""
     from deepagents import create_deep_agent
 
+    from .findings import SCHEMAS
+
     from .llm import openai_chat
 
     _configure_openai_profile()
@@ -171,7 +173,7 @@ def build_specialists(rag_invoke: Callable[[str], str]) -> dict:
 
     return {
         key: create_deep_agent(
-            model=openai_chat(settings.openai_worker_model, temperature, max_tokens=2000, timeout=60),
+            model=openai_chat(settings.openai_worker_model, temperature, max_tokens=4000, timeout=60),
             tools=[tools[t] for t in tool_keys],
             system_prompt=(
                 f"{role}\n\nPlan your research with write_todos first (one todo per person, "
@@ -180,6 +182,7 @@ def build_specialists(rag_invoke: Callable[[str], str]) -> dict:
                 "deliverable — the files you write are scratch space and are not read by anyone."
             ),
             middleware=_middleware(temperature),
+            response_format=SCHEMAS[key],
             name=key,
         ).with_config({"recursion_limit": recursion_limit(key)})
         for key, (tool_keys, budget, temperature, role) in _SPECS.items()
@@ -192,5 +195,5 @@ def build_strategist():
     from .tasks import AcquisitionReport
 
     return chat_with_fallback(
-        settings.openai_strategist_model, temperature=0.1, max_tokens=4000, timeout=120, schema=AcquisitionReport
+        settings.openai_strategist_model, temperature=0.1, max_tokens=8000, timeout=240, schema=AcquisitionReport
     )
