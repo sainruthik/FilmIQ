@@ -63,7 +63,7 @@ def test_film_cannot_be_its_own_comparable_deal():
 
     def deal(title):
         return DealRow(title=title, year="2025", buyer="WB", rights_scope="x", territory="x",
-                       reported_price="x", source="[PDF p.1]")
+                       single_title=True, reported_price="x", source="[PDF p.1]")
 
     findings = DealsFindings(deals=[deal("Sinners"), deal("Weapons")], price_bands="x")
     kept = without_title(findings, "Sinners (2025)").deals
@@ -81,7 +81,7 @@ def test_priced_count_and_confidence_levels():
 
     def deal(title, price):
         return DealRow(title=title, year="2024", buyer="Netflix", rights_scope="x", territory="US",
-                       reported_price=price, source="[Deadline – X](https://deadline.com/x)")
+                       single_title=True, reported_price=price, source="[Deadline – X](https://deadline.com/x)")
 
     findings = DealsFindings(
         deals=[deal("A", "$20 million"), deal("B", "Not publicly disclosed"), deal("C", "€8M")],
@@ -89,3 +89,37 @@ def test_priced_count_and_confidence_levels():
     )
     assert priced_count(findings) == 2
     assert [confidence(n) for n in (0, 1, 2, 5)] == ["Low", "Medium", "High", "High"]
+
+
+def test_price_parsing_to_millions():
+    from pipeline.findings import price_millions
+
+    assert price_millions("$15M+") == 15
+    assert price_millions("$7B+") == 7000
+    assert price_millions("€8 million") == 8
+    assert price_millions("$2,500,000") == 2.5
+    assert price_millions("Not publicly disclosed") is None
+
+
+def test_slate_deals_and_ip_rights_do_not_count():
+    # Real case from the Sinners run: only Obsession is a single-film comparable.
+    from pipeline.findings import DealRow, DealsFindings, priced_count
+
+    def deal(title, price, single):
+        return DealRow(title=title, year="2026", buyer="x", rights_scope="x", territory="x",
+                       reported_price=price, single_title=single, source="[PDF p.1]")
+
+    findings = DealsFindings(
+        deals=[deal("Obsession", "$15M+", True), deal("Sony slate", "$7B+", True), deal("Siren Head", "$1M+", False)],
+        price_bands="x",
+    )
+    assert priced_count(findings) == 1
+
+
+def test_single_film_flag_renders_yes_no():
+    from pipeline.findings import DealRow, DealsFindings
+
+    md = render(DealsFindings(deals=[DealRow(title="A", year="2025", buyer="b", rights_scope="r", territory="t",
+                                             reported_price="$5M", single_title=True, source="[PDF p.1]")],
+                              price_bands="x"))
+    assert "| Single film |" in md and "| Yes |" in md

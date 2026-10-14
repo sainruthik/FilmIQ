@@ -209,7 +209,7 @@ class TestStructuredSpecialist:
 
         findings = DealsFindings(
             deals=[DealRow(title="Film X", year="2024", buyer="Netflix", rights_scope="Exclusive SVOD",
-                           territory="US", reported_price="$20M", source="[Deadline – X sale](https://deadline.com/x)")],
+                           territory="US", single_title=True, reported_price="$20M", source="[Deadline – X sale](https://deadline.com/x)")],
             price_bands="Exclusive US ~$20M per the cited deal.",
         )
 
@@ -228,7 +228,7 @@ class TestBidConfidence:
         from pipeline.findings import DealRow, DealsFindings
 
         rows = [DealRow(title=f"Film {i}", year="2024", buyer="Netflix", rights_scope="Excl SVOD",
-                        territory="US", reported_price=p, source="[Deadline – X](https://deadline.com/x)")
+                        territory="US", single_title=True, reported_price=p, source="[Deadline – X](https://deadline.com/x)")
                 for i, p in enumerate(prices)]
         findings = DealsFindings(deals=rows, price_bands="Per cited deals.")
 

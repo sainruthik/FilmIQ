@@ -90,6 +90,11 @@ class DealRow(BaseModel):
     rights_scope: str = Field(description="Exclusive or not, window, term")
     territory: str
     reported_price: str = Field(description="Reported price, or 'Not publicly disclosed'")
+    single_title: bool = Field(
+        title="Single film",
+        description="True only if the price is for this one finished film — false for slate/"
+        "output deals, studio packages, IP or remake rights",
+    )
     source: str = _source()
 
 
@@ -159,6 +164,8 @@ def _title(name: str, field) -> str:
 
 
 def _cell(value) -> str:
+    if isinstance(value, bool):
+        return "Yes" if value else "No"
     return str(value).replace("|", "\\|").replace("\n", " ").strip()
 
 
@@ -183,14 +190,35 @@ def _dedupe(rows: list[BaseModel]) -> list[BaseModel]:
     return unique
 
 
-_PRICE_RE = re.compile(r"[$£€]\s?\d")
+_PRICE_RE = re.compile(
+    r"[$£€]\s?(\d+(?:\.\d+)?)\s*(billion|bn|b|million|mn|m|thousand|k)?\b", re.IGNORECASE
+)
+_UNIT_MILLIONS = {"b": 1000, "bn": 1000, "billion": 1000, "m": 1, "mn": 1, "million": 1,
+                  "k": 0.001, "thousand": 0.001}
+# A single film's licence or acquisition. Outside this band it's a slate/output
+# deal ($7B Netflix–Sony) or a trivial rights buy, not a comparable.
+PLAUSIBLE_MILLIONS = (0.5, 300.0)
+
+
+def price_millions(text: str) -> float | None:
+    """First price in `text`, in USD millions; bare figures are dollars."""
+    m = _PRICE_RE.search(text.replace(",", ""))
+    if not m:
+        return None
+    value, unit = float(m.group(1)), (m.group(2) or "").lower()
+    return value * _UNIT_MILLIONS[unit] if unit else value / 1_000_000
 
 
 def priced_count(findings: BaseModel) -> int:
-    """Comparable deals with a disclosed dollar price; drives bid confidence."""
+    """Single-film comparables with a plausible disclosed price; drives bid confidence."""
     if not isinstance(findings, DealsFindings):
         return 0
-    return sum(1 for d in _dedupe(findings.deals) if _PRICE_RE.search(d.reported_price))
+    low, high = PLAUSIBLE_MILLIONS
+    return sum(
+        1
+        for d in _dedupe(findings.deals)
+        if d.single_title and (p := price_millions(d.reported_price)) is not None and low <= p <= high
+    )
 
 
 def confidence(priced: int) -> str:
