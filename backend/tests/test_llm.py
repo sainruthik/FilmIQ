@@ -45,10 +45,10 @@ class TestSpecialistMiddleware:
         from pipeline.agents import _middleware
 
         monkeypatch.setattr(settings, "groq_api_key", "")
-        assert [type(m).__name__ for m in _middleware(0.1)] == ["TodoListMiddleware"]
+        assert [type(m).__name__ for m in _middleware(0.1)] == ["TodoListMiddleware", "ModelFailureLogger"]
 
         monkeypatch.setattr(settings, "groq_api_key", "test-groq-key")
-        assert [type(m).__name__ for m in _middleware(0.1)] == ["TodoListMiddleware", "ModelFallbackMiddleware"]
+        assert [type(m).__name__ for m in _middleware(0.1)] == ["TodoListMiddleware", "ModelFallbackMiddleware", "ModelFailureLogger"]
 
 
 class _FakeEmbeddings:

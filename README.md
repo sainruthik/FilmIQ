@@ -159,7 +159,7 @@ docker compose up --build
 | `OPENAI_WORKER_MODEL` | No | Default: `gpt-4o-mini` |
 | `OPENAI_STRATEGIST_MODEL` | No | Default: `gpt-4o` |
 | `TAVILY_API_KEY` | No | Use Tavily instead of DuckDuckGo for web search (structured results, more reliable) |
-| `GROQ_API_KEY` | No | Chat fallback: every model fails over to Groq (`GROQ_MODEL`, default `llama-3.3-70b-versatile`) on any OpenAI error. Embeddings fall back to local FastEmbed regardless |
+| `GROQ_API_KEY` | No | Chat fallback: every model fails over to Groq (`GROQ_MODEL`, default `openai/gpt-oss-120b`) on any OpenAI error. Embeddings fall back to local FastEmbed regardless |
 | `LANGSMITH_TRACING` | No | Set `true` to trace every run in LangSmith (needs `LANGSMITH_API_KEY`) |
 | `LANGSMITH_API_KEY` | No | LangSmith key; traces show each specialist's plan, tool calls, and the verifier retry |
 | `CORS_ORIGINS` | No | Allowed browser origins (exact match, comma-separated) |

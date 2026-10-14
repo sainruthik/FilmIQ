@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     # error (quota, rate limit, outage). Embeddings fall back to local
     # FastEmbed regardless, since Groq has no embeddings API.
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-120b"
 
     # Comma-separated allowed CORS origins — override in .env for production
     cors_origins: str = "http://localhost:3000,http://localhost:3001"

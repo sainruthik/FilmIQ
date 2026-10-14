@@ -295,3 +295,12 @@
   animation: shimmer 2s ease-in-out infinite;
   background-size: 200% 100%;
 }
+
+/* Scroll-in animations start at opacity 0; anything never scrolled into
+   view would print invisible (headings below the fold vanished in PDFs). */
+@media print {
+  * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

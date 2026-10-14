@@ -76,7 +76,28 @@ def _middleware(temperature: float) -> list:
     from .llm import groq_chat
 
     fallback = groq_chat(temperature, max_tokens=4000, timeout=60)
-    return [TodoListMiddleware()] + ([ModelFallbackMiddleware(fallback)] if fallback else [])
+    # Innermost (last), so it sees each attempt; the fallback middleware only
+    # re-raises the final error, which hid why OpenAI failed in the first place.
+    log_failures = _ModelFailureLogger()
+    return [TodoListMiddleware()] + ([ModelFallbackMiddleware(fallback)] if fallback else []) + [log_failures]
+
+
+def _ModelFailureLogger():
+    import logging
+
+    from langchain.agents.middleware import AgentMiddleware
+
+    logger = logging.getLogger(__name__)
+
+    class ModelFailureLogger(AgentMiddleware):
+        async def awrap_model_call(self, request, handler):
+            try:
+                return await handler(request)
+            except Exception as exc:
+                logger.warning("Model %s failed: %s: %s", getattr(request.model, "model_name", getattr(request.model, "model", "?")), type(exc).__name__, str(exc)[:300])
+                raise
+
+    return ModelFailureLogger()
 
 
 def _build_web_search_run() -> Callable[[str], str]:
