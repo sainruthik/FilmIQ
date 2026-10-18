@@ -1,47 +1,36 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Figtree, JetBrains_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Courier_Prime, Schibsted_Grotesk } from "next/font/google";
 import { MotionProvider } from "@/components/MotionProvider";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
-// Memo theme fonts
-const cormorant = Cormorant_Garamond({
+// FilmIQ's own words.
+const grotesk = Schibsted_Grotesk({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-cormorant",
-  display: "swap",
-});
-const figtree = Figtree({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-figtree",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-ui",
   display: "swap",
 });
 
-// Terminal theme fonts
-const jetbrains = JetBrains_Mono({
+// The screenplay typeface: marks what came from the uploaded document.
+const courier = Courier_Prime({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-jetbrains",
-  display: "swap",
-});
-const plex = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex",
+  weight: "400",
+  variable: "--font-doc",
   display: "swap",
 });
 
 // Runs before paint so a saved theme never flashes the default one.
-const themeInit = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t==="memo"||t==="terminal")document.documentElement.dataset.theme=t}catch(e){}`;
+// Maps the old theme names (memo, terminal) so returning users keep their choice.
+const themeInit = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");t=t==="memo"?"draft":t==="terminal"?"screening":t;if(t==="draft"||t==="screening")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export const metadata: Metadata = {
-  title: "FilmIQ — AI Film Acquisition Intelligence",
+  title: "FilmIQ: film acquisition due diligence",
   description:
-    "Upload your film documents. Our AI specialist team delivers a complete acquisition analysis with bid range in minutes.",
+    "Upload a film's script, press kit or financials. Seven analysts source every figure and return a bid range you can take to committee.",
   openGraph: {
     title: "FilmIQ",
-    description: "AI-powered film acquisition intelligence",
+    description: "Film acquisition due diligence with a sourced bid range",
     type: "website",
   },
 };
@@ -54,14 +43,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="memo"
+      data-theme="draft"
       suppressHydrationWarning
-      className={`${cormorant.variable} ${figtree.variable} ${jetbrains.variable} ${plex.variable}`}
+      className={`${grotesk.variable} ${courier.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body className="min-h-screen antialiased">
+      <body className="min-h-[100dvh]">
         <MotionProvider>{children}</MotionProvider>
       </body>
     </html>
