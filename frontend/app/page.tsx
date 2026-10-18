@@ -1,6 +1,7 @@
 import { NavBar } from "@/components/NavBar";
 import { UploadZone } from "@/components/UploadZone";
 import { BidScale } from "@/components/BidScale";
+import { Haze } from "@/components/Haze";
 import { AGENTS } from "@/lib/agents";
 
 const SPECIALISTS = AGENTS.slice(0, -1);
@@ -48,6 +49,8 @@ export default function HomePage() {
       <NavBar />
       <main>
         <section aria-labelledby="hero-heading" className="relative overflow-hidden border-b border-rule">
+          {/* Fog on the right half only, so the headline sits on clean paper. */}
+          <Haze className="[mask-image:linear-gradient(90deg,transparent_30%,#000_70%)]" />
           <div className="relative max-w-[1240px] mx-auto px-4 md:px-8 grid gap-12 pt-12 pb-18 lg:grid-cols-[5fr_6fr] lg:gap-18 lg:py-28 lg:items-center">
             <div>
               <h1 id="hero-heading" className="text-display font-semibold leading-[1.02] tracking-[-0.035em] max-w-[13ch] mb-6">

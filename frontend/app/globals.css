@@ -17,7 +17,7 @@
   --cherry: #b3263e;
   --on-goldenrod: #1e2126;
   /* Vanta fog: base, lowlight, midtone, highlight. */
-  --fog: #f7f7f4 #dcddd6 #ecede8 #f6e3a8;
+  --fog: #f7f7f4 #dcddd6 #ecede8 #efeadb;
   --shadow-sheet: 0 24px 48px -32px rgb(30 33 38 / 0.35);
   color-scheme: light;
 }
@@ -31,7 +31,7 @@
   --goldenrod: #e2b23a;
   --cherry: #f06a7e;
   --on-goldenrod: #16191e;
-  --fog: #16191e #1e232a #262c35 #3a3420;
+  --fog: #16191e #1e232a #262c35 #2f2d27;
   --shadow-sheet: 0 24px 48px -32px rgb(0 0 0 / 0.6);
   color-scheme: dark;
 }

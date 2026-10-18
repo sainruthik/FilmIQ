@@ -6,6 +6,9 @@ import Link from "next/link";
 import { NavBar } from "@/components/NavBar";
 import { AnalystRows } from "@/components/AnalystRows";
 import { BidScale } from "@/components/BidScale";
+import { BidBar } from "@/components/BidBar";
+import { Haze } from "@/components/Haze";
+import { VerdictReveal } from "@/components/VerdictReveal";
 import { ReportDisplay } from "@/components/ReportDisplay";
 import { SPECIALIST_NAMES } from "@/lib/agents";
 import { useAnalysis, type AnalysisState, type BidRange } from "@/lib/useAnalysis";
@@ -83,7 +86,10 @@ function Verdict({ state }: { state: AnalysisState }) {
       </div>
       {hasBid && bid && (
         <>
-          <BidScale low={bid.low} fair={bid.fair} walkAway={bid.walk_away} />
+          {/* Starts while the header fog is still clearing. */}
+          <VerdictReveal delay={0.5}>
+            <BidScale low={bid.low} fair={bid.fair} walkAway={bid.walk_away} />
+          </VerdictReveal>
           {confidenceLine(bid) && <p className="mt-8 text-13 text-graphite">{confidenceLine(bid)}</p>}
         </>
       )}
@@ -125,6 +131,7 @@ function AnalysisContent() {
       <NavBar />
       <main>
         <header className="relative overflow-hidden border-b border-rule">
+          <Haze active={!isDone && !isError} />
           <div className="relative max-w-[1240px] mx-auto px-4 md:px-8 pt-12 pb-8">
             <h1 className="text-31 sm:text-39 lg:text-[3.2rem] font-semibold leading-[1.04] tracking-[-0.03em] mb-2">
               {state.filmTitle}
@@ -145,6 +152,7 @@ function AnalysisContent() {
           {!isDone && !isError && <Running state={state} />}
           {isDone && (
             <>
+              {state.bidRange && <BidBar title={state.filmTitle} bid={state.bidRange} trigger="#verdict [data-scale]" />}
               <Verdict state={state} />
               {state.report && (
                 <div className="pt-12 pb-28">
