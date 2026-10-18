@@ -31,26 +31,28 @@ interface AnalystRowsProps {
   from?: number;
   to?: number;
   className?: string;
+  /** Always use the one-column mobile layout (narrow sidebars). */
+  stacked?: boolean;
 }
 
 // One row per analyst: status, name, what it covers. Rows instead of cards so
 // 13px+ text fits on mobile and the list reads in pipeline order.
-export function AnalystRows({ agents, from = 0, to = AGENTS.length, className = "" }: AnalystRowsProps) {
+export function AnalystRows({ agents, from = 0, to = AGENTS.length, className = "border-t border-rule", stacked = false }: AnalystRowsProps) {
   return (
-    <ul className={`border-t border-rule ${className}`}>
+    <ul className={className}>
       {AGENTS.slice(from, to).map((cfg, i) => {
         const status = agents[from + i]?.status ?? "waiting";
         return (
           <li
             key={cfg.name}
-            className={`grid grid-cols-[20px_1fr] sm:grid-cols-[20px_12rem_1fr_auto] gap-x-3 gap-y-0.5 items-center py-4 border-b border-rule transition-opacity ${
+            className={`grid grid-cols-[20px_1fr] ${stacked ? "" : "sm:grid-cols-[20px_12rem_1fr_auto]"} gap-x-3 gap-y-0.5 items-center py-4 border-b border-rule transition-opacity ${
               status === "waiting" ? "opacity-60" : ""
             }`}
           >
             <StatusIcon status={status} />
             <span className="font-semibold">{cfg.name}</span>
-            <span className="col-start-2 sm:col-start-auto text-graphite">{cfg.short}</span>
-            <span className="col-start-2 sm:col-start-auto text-13 text-graphite">{LABEL[status]}</span>
+            <span className={`col-start-2 ${stacked ? "" : "sm:col-start-auto"} text-graphite`}>{cfg.short}</span>
+            <span className={`col-start-2 ${stacked ? "" : "sm:col-start-auto"} text-13 text-graphite`}>{LABEL[status]}</span>
           </li>
         );
       })}

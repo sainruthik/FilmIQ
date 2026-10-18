@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Courier_Prime, Schibsted_Grotesk } from "next/font/google";
-import { MotionProvider } from "@/components/MotionProvider";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
@@ -51,7 +50,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body className="min-h-[100dvh]">
-        <MotionProvider>{children}</MotionProvider>
+        {children}
       </body>
     </html>
   );
