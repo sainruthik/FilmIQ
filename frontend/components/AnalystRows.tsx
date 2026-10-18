@@ -45,9 +45,7 @@ export function AnalystRows({ agents, from = 0, to = AGENTS.length, className = 
         return (
           <li
             key={cfg.name}
-            className={`grid grid-cols-[20px_1fr] ${stacked ? "" : "sm:grid-cols-[20px_12rem_1fr_auto]"} gap-x-3 gap-y-0.5 items-center py-4 border-b border-rule transition-opacity ${
-              status === "waiting" ? "opacity-60" : ""
-            }`}
+            className={`grid grid-cols-[20px_1fr] ${stacked ? "" : "sm:grid-cols-[20px_12rem_1fr_auto]"} gap-x-3 gap-y-0.5 items-center py-4 border-b border-rule ${status === "waiting" ? "text-graphite" : ""}`}
           >
             <StatusIcon status={status} />
             <span className="font-semibold">{cfg.name}</span>

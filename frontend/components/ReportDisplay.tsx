@@ -27,7 +27,7 @@ export function ReportDisplay({ report }: ReportDisplayProps) {
   const headings = useMemo(() => reportHeadings(markdown), [markdown]);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-18">
+    <div className="grid gap-8 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-18 print:block">
       {headings.length > 1 ? (
         <nav aria-label="Report contents" className="hidden lg:block print:hidden sticky top-32 self-start text-13">
           <ol className="border-l border-rule">
@@ -44,7 +44,7 @@ export function ReportDisplay({ report }: ReportDisplayProps) {
           </ol>
         </nav>
       ) : (
-        <div className="hidden lg:block" />
+        <div className="hidden lg:block print:hidden" />
       )}
 
       <article className="report min-w-0">
