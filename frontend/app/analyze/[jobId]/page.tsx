@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavBar } from "@/components/NavBar";
-import { AgentTimeline } from "@/components/AgentTimeline";
+import { AnalystRows } from "@/components/AnalystRows";
 import { ReportDisplay } from "@/components/ReportDisplay";
 import { SPECIALIST_NAMES } from "@/lib/agents";
 import { useAnalysis } from "@/lib/useAnalysis";
@@ -247,7 +247,7 @@ function AnalysisContent() {
               >
                 Specialist Team
               </p>
-              <AgentTimeline agents={state.agents} />
+              <AnalystRows agents={state.agents} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -268,7 +268,7 @@ function AnalysisContent() {
               />
             </summary>
             <div className="mt-4">
-              <AgentTimeline agents={state.agents} />
+              <AnalystRows agents={state.agents} />
             </div>
           </details>
         )}

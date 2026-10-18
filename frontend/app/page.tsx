@@ -278,7 +278,6 @@ export default function HomePage() {
             style={{ scrollbarWidth: "none" }}
           >
             {AGENTS.map((agent, i) => {
-              const Icon = agent.icon;
               return (
                 <motion.div
                   key={agent.name}
@@ -310,10 +309,6 @@ export default function HomePage() {
                         transition: "all 0.3s ease",
                       }}
                     >
-                      <Icon
-                        size={17}
-                        className="text-gold opacity-70 group-hover:opacity-100 transition-opacity"
-                      />
                     </div>
                     <span
                       className="font-display font-bold leading-none select-none"
