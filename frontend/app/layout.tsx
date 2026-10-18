@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="draft"
+      data-theme="screening"
       suppressHydrationWarning
       className={`${grotesk.variable} ${courier.variable}`}
     >
