@@ -1,364 +1,110 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { NavBar } from "@/components/NavBar";
 import { UploadZone } from "@/components/UploadZone";
+import { BidScale } from "@/components/BidScale";
 import { AGENTS } from "@/lib/agents";
 
-const STEPS = [
-  {
-    n: "01",
-    title: "Upload",
-    desc: "Drop your film PDF — press kit, script, or financial summary. Multiple documents supported for deeper diligence.",
-  },
-  {
-    n: "02",
-    title: "AI Team Analyzes",
-    desc: "7 specialist agents run in sequence, each focused on a distinct dimension: story, talent, market, deals, buzz, risk, strategy.",
-  },
-  {
-    n: "03",
-    title: "Receive Report",
-    desc: "A structured acquisition report with cited sources, risk register, and a justified bid range — ready for your investment committee.",
-  },
-];
+const SPECIALISTS = AGENTS.slice(0, -1);
+const STRATEGIST = AGENTS[AGENTS.length - 1];
 
-const spring = { type: "spring" as const, stiffness: 90, damping: 22 };
+// What a report looks like, shown instead of marketing stats.
+function SampleSheet() {
+  return (
+    <article aria-label="Sample report" className="bg-sheet border border-rule rounded shadow-sheet px-6 py-8 md:px-12 md:pt-12 md:pb-8">
+      <header className="flex flex-wrap items-baseline justify-between gap-4 mb-12">
+        <h2 className="text-25 font-semibold tracking-[-0.02em]">Low Tide Saints</h2>
+        <p className="text-13 text-graphite">Sample report, fictional film</p>
+      </header>
 
-const leftContainer = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
-};
+      <div className="mb-8">
+        <BidScale low="$1.8M" fair="$2.6M" walkAway="$4.1M" size="md" />
+      </div>
 
-const fromLeft = {
-  hidden: { opacity: 0, x: -32 },
-  show: { opacity: 1, x: 0, transition: spring },
-};
-
-const fromRight = {
-  hidden: { opacity: 0, x: 32 },
-  show: { opacity: 1, x: 0, transition: { ...spring, delay: 0.15 } },
-};
+      <dl className="border-t border-rule">
+        <div className="grid sm:grid-cols-[9rem_1fr] gap-x-4 gap-y-1 py-4 border-b border-rule">
+          <dt>Production budget</dt>
+          <dd>
+            $3.2M including contingency <span className="cite-pdf">PDF p.4</span>
+          </dd>
+        </div>
+        <div className="grid sm:grid-cols-[9rem_1fr] gap-x-4 gap-y-1 py-4 border-b border-rule">
+          <dt>Closest deal</dt>
+          <dd>
+            Harbour Lights to a mid-size streamer, $2.4M, 2023 <span className="text-13 text-graphite">Deadline</span>
+          </dd>
+        </div>
+        <div className="grid sm:grid-cols-[9rem_1fr] gap-x-4 gap-y-1 py-4 border-b border-rule">
+          <dt>Lead's last box office</dt>
+          <dd className="text-cherry">Not found in any source. Marked unverified.</dd>
+        </div>
+      </dl>
+      <p className="mt-6 text-13 text-graphite">Medium confidence: based on 1 comparable deal with a disclosed price.</p>
+    </article>
+  );
+}
 
 export default function HomePage() {
   return (
-    <div className="min-h-[100dvh]" style={{ background: "var(--color-bg)" }}>
+    <>
       <NavBar />
+      <main>
+        <section aria-labelledby="hero-heading" className="relative overflow-hidden border-b border-rule">
+          <div className="relative max-w-[1240px] mx-auto px-4 md:px-8 grid gap-12 pt-12 pb-18 lg:grid-cols-[5fr_6fr] lg:gap-18 lg:py-28 lg:items-center">
+            <div>
+              <h1 id="hero-heading" className="text-display font-semibold leading-[1.02] tracking-[-0.035em] max-w-[13ch] mb-6">
+                What is this film worth to you?
+              </h1>
+              <p className="text-20 leading-normal text-graphite max-w-[34ch] mb-8">
+                Upload the script, press kit or financials. Seven analysts read it, source every figure, and return a
+                bid range you can take to committee.
+              </p>
+              <UploadZone />
+            </div>
+            <SampleSheet />
+          </div>
+        </section>
 
-      {/* ── HERO ── asymmetric split: text left, upload right */}
-      <section className="relative min-h-[100dvh] flex items-center pt-14 overflow-hidden">
-        {/* Film strip left edge */}
-        <div
-          className="film-strip hidden sm:block absolute left-0 top-0 bottom-0 w-6 opacity-25 pointer-events-none"
-          aria-hidden
-          style={{
-            background:
-              "repeating-linear-gradient(180deg, transparent 0, transparent 14px, rgb(var(--accent-rgb) / 0.45) 14px, rgb(var(--accent-rgb) / 0.45) 20px)",
-          }}
-        />
-        {/* Film strip right edge */}
-        <div
-          className="film-strip hidden sm:block absolute right-0 top-0 bottom-0 w-6 opacity-25 pointer-events-none"
-          aria-hidden
-          style={{
-            background:
-              "repeating-linear-gradient(180deg, transparent 0, transparent 14px, rgb(var(--accent-rgb) / 0.45) 14px, rgb(var(--accent-rgb) / 0.45) 20px)",
-          }}
-        />
-
-        {/* Ambient glow */}
-        <div
-          className="absolute top-1/4 right-[15%] w-[600px] h-[600px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgb(var(--accent-rgb) / 0.06) 0%, transparent 68%)" }}
-        />
-        <div
-          className="absolute bottom-0 left-[20%] w-[400px] h-[400px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgb(var(--accent-rgb) / 0.04) 0%, transparent 70%)" }}
-        />
-
-        <div className="max-w-6xl mx-auto w-full px-4 sm:px-10 grid lg:grid-cols-[1fr_1.15fr] gap-10 lg:gap-16 items-center py-12 sm:py-20">
-          {/* LEFT: headline + stats */}
-          <motion.div
-            className="flex flex-col gap-9"
-            variants={leftContainer}
-            initial="hidden"
-            animate="show"
-          >
-            {/* Badge */}
-            <motion.div variants={fromLeft}>
-              <span
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-sans font-semibold uppercase tracking-[0.16em]"
-                style={{
-                  background: "rgb(var(--accent-rgb) / 0.07)",
-                  border: "1px solid rgb(var(--accent-rgb) / 0.3)",
-                  color: "var(--color-gold)",
-                }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-                AI Acquisition Intelligence
-              </span>
-            </motion.div>
-
-            {/* Headline */}
-            <motion.h1
-              variants={fromLeft}
-              className="font-display leading-[1.06] tracking-tight"
-              style={{ fontSize: "clamp(2.4rem,4.5vw,4.2rem)" }}
-            >
-              <span className="gold-text">Film due diligence,</span>
-              <br />
-              <span style={{ color: "var(--color-text)" }}>done in minutes.</span>
-            </motion.h1>
-
-            {/* Subtext */}
-            <motion.p
-              variants={fromLeft}
-              className="text-[15.5px] leading-[1.7] font-sans max-w-[420px]"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              Upload a film document and our specialist AI team delivers a complete
-              acquisition report — story analysis, talent valuation, market comps,
-              risk register, and a justified bid range.
-            </motion.p>
-
-            {/* Stats row */}
-            <motion.div variants={fromLeft} className="grid grid-cols-3 gap-4 sm:flex sm:items-center sm:gap-7">
-              {[
-                { val: "7", label: "Specialist Agents" },
-                { val: "<5m", label: "Analysis Time" },
-                { val: "10+", label: "Docs Per Job" },
-              ].map((stat, i) => (
-                <div key={stat.label} className="flex items-center gap-7">
-                  <div>
-                    <p className="font-display text-[2rem] leading-none gold-text">{stat.val}</p>
-                    <p
-                      className="text-[11px] font-sans uppercase tracking-[0.14em] mt-1"
-                      style={{ color: "var(--color-text-dim)" }}
-                    >
-                      {stat.label}
-                    </p>
-                  </div>
-                  {i < 2 && (
-                    <div
-                      className="hidden sm:block h-8 w-px shrink-0"
-                      style={{ background: "var(--color-border)" }}
-                    />
-                  )}
-                </div>
-              ))}
-            </motion.div>
-          </motion.div>
-
-          {/* RIGHT: upload zone */}
-          <motion.div variants={fromRight} initial="hidden" animate="show">
-            <UploadZone />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── zigzag alternating layout */}
-      <section
-        className="overflow-x-clip py-20 sm:py-28 px-4 sm:px-10 border-t"
-        style={{ borderColor: "var(--color-border)" }}
-      >
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ type: "spring" as const, stiffness: 80, damping: 20 }}
-            className="mb-20"
-          >
-            <p className="text-[11px] font-sans font-semibold uppercase tracking-[0.22em] text-gold mb-3">
-              Process
-            </p>
-            <h2
-              className="font-display tracking-tight"
-              style={{ fontSize: "clamp(1.9rem,3.2vw,2.8rem)", color: "var(--color-text)" }}
-            >
-              How it works
+        <section
+          aria-labelledby="contents-heading"
+          className="max-w-[1240px] mx-auto px-4 md:px-8 grid gap-8 pt-18 pb-28 lg:grid-cols-[5fr_6fr] lg:gap-18"
+        >
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <h2 id="contents-heading" className="text-39 font-semibold leading-[1.05] tracking-[-0.03em] max-w-[14ch] mb-4">
+              What the report covers
             </h2>
-          </motion.div>
+            <p className="text-graphite max-w-[36ch]">
+              Six analysts work on the film at the same time. When all six finish, a strategist weighs their findings
+              and writes the bid.
+            </p>
+          </div>
 
-          <div className="flex flex-col gap-16">
-            {STEPS.map((step, i) => (
-              <motion.div
-                key={step.n}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -44 : 44 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ type: "spring" as const, stiffness: 75, damping: 20 }}
-                className={`flex flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-10 ${i % 2 !== 0 ? "sm:flex-row-reverse" : ""}`}
-              >
-                {/* Number column */}
-                <div className="shrink-0 sm:w-24 flex items-start sm:justify-center sm:pt-3">
-                  <span
-                    className="font-display font-bold leading-none select-none"
-                    style={{
-                      fontSize: "clamp(3rem, 8vw, 5rem)",
-                      color: "var(--color-gold)",
-                      opacity: 0.18,
-                    }}
-                  >
-                    {step.n}
-                  </span>
+          <ol>
+            {SPECIALISTS.map((a) => (
+              <li key={a.name} className="grid grid-cols-[1fr_auto] gap-4 py-6 border-b border-rule first:border-t">
+                <div>
+                  <h3 className="text-20 font-semibold tracking-[-0.01em] mb-1">{a.section}</h3>
+                  <p className="text-graphite">{a.desc}</p>
                 </div>
-
-                {/* Card */}
-                <div
-                  className="flex-1 rounded-2xl p-6 sm:p-8"
-                  style={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                  }}
-                >
-                  <h3
-                    className="font-display text-2xl mb-3"
-                    style={{ color: "var(--color-text)" }}
-                  >
-                    {step.title}
-                  </h3>
-                  <p
-                    className="text-[14.5px] font-sans leading-[1.75]"
-                    style={{ color: "var(--color-text-muted)" }}
-                  >
-                    {step.desc}
-                  </p>
-                </div>
-              </motion.div>
+                <span className="text-13 text-graphite text-right">{a.name}</span>
+              </li>
             ))}
-          </div>
-        </div>
-      </section>
+            <li className="grid grid-cols-[1fr_auto] gap-4 py-6 mt-6 border-t-2 border-ink">
+              <div>
+                <h3 className="text-20 font-semibold tracking-[-0.01em] mb-1">
+                  <span className="mark">{STRATEGIST.section}</span>
+                </h3>
+                <p className="text-graphite">{STRATEGIST.desc}</p>
+              </div>
+              <span className="text-13 text-graphite text-right">{STRATEGIST.name}</span>
+            </li>
+          </ol>
+        </section>
+      </main>
 
-      {/* ── AI TEAM ── horizontal overflow strip */}
-      <section
-        className="py-28 border-t"
-        style={{ borderColor: "var(--color-border)" }}
-      >
-        <div className="max-w-5xl mx-auto px-4 sm:px-10 mb-14">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ type: "spring" as const, stiffness: 80, damping: 20 }}
-          >
-            <p className="text-[11px] font-sans font-semibold uppercase tracking-[0.22em] text-gold mb-3">
-              Specialist Team
-            </p>
-            <h2
-              className="font-display tracking-tight max-w-sm"
-              style={{
-                fontSize: "clamp(1.9rem,3.2vw,2.8rem)",
-                color: "var(--color-text)",
-              }}
-            >
-              Seven agents, one verdict.
-            </h2>
-          </motion.div>
-        </div>
-
-        {/* Scrollable strip with fade edges */}
-        <div className="relative">
-          <div
-            className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
-            style={{
-              background: `linear-gradient(90deg, var(--color-bg) 0%, transparent 100%)`,
-            }}
-          />
-          <div
-            className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
-            style={{
-              background: `linear-gradient(-90deg, var(--color-bg) 0%, transparent 100%)`,
-            }}
-          />
-
-          <div
-            className="flex gap-4 overflow-x-auto px-4 sm:px-10 pb-3"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {AGENTS.map((agent, i) => {
-              return (
-                <motion.div
-                  key={agent.name}
-                  initial={{ opacity: 0, y: 28 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{
-                    type: "spring" as const,
-                    stiffness: 90,
-                    damping: 20,
-                    delay: i * 0.07,
-                  }}
-                  whileHover={{
-                    y: -5,
-                    transition: { type: "spring" as const, stiffness: 220, damping: 18 },
-                  }}
-                  className="shrink-0 w-48 rounded-2xl p-6 flex flex-col gap-4 group cursor-default"
-                  style={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                  }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{
-                        background: "rgb(var(--accent-rgb) / 0.07)",
-                        border: "1px solid rgb(var(--accent-rgb) / 0.18)",
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                    </div>
-                    <span
-                      className="font-display font-bold leading-none select-none"
-                      style={{ fontSize: "1.8rem", color: "var(--color-gold)", opacity: 0.14 }}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-
-                  <div>
-                    <p
-                      className="text-[12.5px] font-sans font-semibold leading-tight mb-1.5"
-                      style={{ color: "var(--color-text)" }}
-                    >
-                      {agent.name}
-                    </p>
-                    <p
-                      className="text-[11px] font-sans leading-relaxed"
-                      style={{ color: "var(--color-text-dim)" }}
-                    >
-                      {agent.desc}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer
-        className="py-10 px-4 sm:px-10 border-t"
-        style={{ borderColor: "var(--color-border)" }}
-      >
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <p
-            className="text-[11px] font-sans"
-            style={{ color: "var(--color-text-dim)" }}
-          >
-            FilmIQ — AI Film Acquisition Intelligence
-          </p>
-          <p
-            className="text-[11px] font-sans"
-            style={{ color: "var(--color-text-dim)" }}
-          >
-            Powered by Claude · LangGraph
-          </p>
-        </div>
+      <footer className="border-t border-rule">
+        <p className="max-w-[1240px] mx-auto px-4 md:px-8 py-8 text-13 text-graphite">
+          FilmIQ. Every figure in a report is cited to your document or a named source, or marked unverified.
+        </p>
       </footer>
-    </div>
+    </>
   );
 }
