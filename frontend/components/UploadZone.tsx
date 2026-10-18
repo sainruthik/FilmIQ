@@ -85,14 +85,25 @@ export function UploadZone() {
     <div className="w-full max-w-2xl mx-auto">
       {/* Drop zone */}
       <div
-        className={`upload-zone rounded-2xl p-10 cursor-pointer flex flex-col items-center gap-5 transition-all ${dragging ? "dragging" : ""}`}
+        className={`upload-zone rounded-2xl p-6 sm:p-10 cursor-pointer flex flex-col items-center gap-5 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-gold)] ${dragging ? "dragging" : ""}`}
         onDrop={onDrop}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
+        // dragleave also fires when crossing into a child element; only
+        // clear the state once the pointer has actually left the zone.
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+        }}
         onClick={() => !uploading && inputRef.current?.click()}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && !uploading && inputRef.current?.click()}
+        aria-label="Choose PDF documents to analyze, or drop them here"
+        aria-disabled={uploading}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && !uploading) {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
       >
         <input
           ref={inputRef}
@@ -106,8 +117,8 @@ export function UploadZone() {
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all"
           style={{
-            background: dragging ? "rgba(201,168,76,0.14)" : "rgba(201,168,76,0.07)",
-            border: "1px solid rgba(201,168,76,0.3)",
+            background: dragging ? "rgb(var(--accent-rgb) / 0.14)" : "rgb(var(--accent-rgb) / 0.07)",
+            border: "1px solid rgb(var(--accent-rgb) / 0.3)",
           }}
         >
           {dragging ? (
@@ -134,9 +145,10 @@ export function UploadZone() {
                 Press kits · Scripts · Financial summaries · Pitch decks
               </p>
               <div className="flex items-center gap-2 justify-center">
-                <button className="btn-gold px-6 py-2.5 rounded-lg text-sm font-sans font-semibold pointer-events-none">
+                {/* Visual only: the whole zone is the button. */}
+                <span aria-hidden className="btn-gold px-6 py-2.5 rounded-lg text-sm font-sans font-semibold pointer-events-none">
                   Choose PDFs
-                </button>
+                </span>
                 {!isEmpty && (
                   <span className="text-xs font-sans text-[var(--color-text-dim)] pointer-events-none">
                     or add more
@@ -160,24 +172,26 @@ export function UploadZone() {
         >
           <div
             className="px-4 py-2.5 flex items-center justify-between"
-            style={{ background: "rgba(201,168,76,0.04)", borderBottom: "1px solid var(--color-border)" }}
+            style={{ background: "rgb(var(--accent-rgb) / 0.04)", borderBottom: "1px solid var(--color-border)" }}
           >
-            <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-gold">
+            <p className="text-[11px] font-sans font-semibold uppercase tracking-[0.15em] text-gold">
               {files.length} {files.length === 1 ? "Document" : "Documents"} Queued
             </p>
             <button
               onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-              className="flex items-center gap-1 text-[11px] font-sans text-[var(--color-text-muted)] hover:text-gold transition-colors"
+              className="flex items-center gap-1 -my-2 -mr-2 px-2 py-2 text-[11px] font-sans text-[var(--color-text-muted)] hover:text-gold transition-colors"
             >
               <Plus size={12} /> Add more
             </button>
           </div>
 
+          {/* Capped so the Analyze button stays near the drop zone. */}
+          <div className="max-h-56 overflow-y-auto">
           {files.map((file) => (
             <div
               key={fileKey(file)}
               className="px-4 py-3 flex items-center gap-3"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+              style={{ borderBottom: "1px solid rgb(var(--fg-rgb) / 0.04)" }}
             >
               <FileText size={14} className="text-gold shrink-0 opacity-70" />
               <span className="flex-1 text-sm font-sans text-[var(--color-text-muted)] truncate">
@@ -189,15 +203,17 @@ export function UploadZone() {
               {!uploading && (
                 <button
                   onClick={(e) => { e.stopPropagation(); removeFile(fileKey(file)); }}
-                  className="text-[var(--color-text-dim)] hover:text-[var(--color-error)] transition-colors shrink-0"
+                  aria-label={`Remove ${file.name}`}
+                  className="-m-2 p-2 text-[var(--color-text-dim)] hover:text-[var(--color-error)] transition-colors shrink-0"
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
           ))}
+          </div>
 
-          <div className="px-4 py-3" style={{ background: "rgba(201,168,76,0.03)" }}>
+          <div className="px-4 py-3" style={{ background: "rgb(var(--accent-rgb) / 0.03)" }}>
             <button
               onClick={(e) => { e.stopPropagation(); handleSubmit(); }}
               disabled={uploading}
@@ -223,8 +239,8 @@ export function UploadZone() {
         <div
           className="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-sans animate-fade-in"
           style={{
-            background: "rgba(248,113,113,0.06)",
-            border: "1px solid rgba(248,113,113,0.25)",
+            background: "rgb(var(--danger-rgb) / 0.06)",
+            border: "1px solid rgb(var(--danger-rgb) / 0.25)",
             color: "var(--color-error)",
           }}
         >

@@ -51,10 +51,10 @@ function BidPanel({
         hidden: { opacity: 0, y: 18 },
         show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 90, damping: 22 } },
       }}
-      className="relative flex flex-col items-center justify-center gap-3 px-6 py-9 text-center overflow-hidden"
-      style={{
-        borderRight: "1px solid rgba(255,255,255,0.05)",
-      }}
+      // Stacked on mobile with Fair Value first; side by side from sm up.
+      className={`relative flex flex-col items-center justify-center gap-3 px-6 py-7 sm:py-9 text-center overflow-hidden border-cream/10 border-b last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0 ${
+        highlight ? "order-first sm:order-none" : ""
+      }`}
     >
       {/* Spotlight on highlight column */}
       {highlight && (
@@ -62,7 +62,7 @@ function BidPanel({
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.1) 0%, transparent 70%)",
+              "radial-gradient(ellipse 80% 60% at 50% 0%, rgb(var(--accent-rgb) / 0.1) 0%, transparent 70%)",
           }}
         />
       )}
@@ -71,7 +71,7 @@ function BidPanel({
       <div className="flex items-center gap-1.5 relative">
         <TrendIcon trend={trend} color={accent} />
         <span
-          className="text-[9px] font-sans font-semibold uppercase tracking-[0.18em]"
+          className="text-[11px] font-sans font-semibold uppercase tracking-[0.18em]"
           style={{ color: accent }}
         >
           {label}
@@ -83,8 +83,8 @@ function BidPanel({
         className="font-display leading-none tabular-nums relative"
         style={{
           fontSize: "clamp(1.8rem,3.5vw,2.6rem)",
-          color: highlight ? "#c9a84c" : "var(--color-text)",
-          textShadow: highlight ? "0 0 40px rgba(201,168,76,0.25)" : undefined,
+          color: highlight ? "var(--color-gold)" : "var(--color-text)",
+          textShadow: highlight ? "0 0 40px rgb(var(--accent-rgb) / 0.25)" : undefined,
         }}
       >
         {value ?? "—"}
@@ -92,7 +92,7 @@ function BidPanel({
 
       {/* Description */}
       <p
-        className="text-[10px] font-sans leading-relaxed relative"
+        className="text-[12px] font-sans leading-relaxed relative"
         style={{ color: "var(--color-text-dim)" }}
       >
         {description}
@@ -104,7 +104,7 @@ function BidPanel({
           className="absolute bottom-0 left-8 right-8 h-[2px] rounded-full"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent)",
+              "linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / 0.5), transparent)",
           }}
         />
       )}
@@ -113,17 +113,17 @@ function BidPanel({
 }
 
 const CONFIDENCE_COLOR: Record<NonNullable<BidRange["confidence"]>, string> = {
-  High: "rgba(74,222,128,0.85)",
-  Medium: "#c9a84c",
-  Low: "rgba(248,113,113,0.85)",
+  High: "rgb(var(--success-rgb) / 0.85)",
+  Medium: "rgb(var(--warn-rgb))",
+  Low: "rgb(var(--fg-rgb) / 0.6)",
 };
 
 function ConfidenceBadge({ level, priced }: { level: NonNullable<BidRange["confidence"]>; priced: number }) {
   const color = CONFIDENCE_COLOR[level];
   return (
     <span
-      className="mt-1 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-sans font-semibold uppercase tracking-[0.18em]"
-      style={{ color, border: `1px solid ${color}`, background: "rgba(0,0,0,0.25)" }}
+      className="mt-1 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-sans font-semibold uppercase tracking-[0.08em] sm:tracking-[0.18em] whitespace-nowrap"
+      style={{ color, border: `1px solid ${color}`, background: "var(--color-surface)" }}
       title="Counted from comparable deals with a disclosed price: High 2+, Medium 1, Low none"
     >
       {level} confidence · {priced} priced comparable{priced === 1 ? "" : "s"}
@@ -139,12 +139,12 @@ function BidRangeCard({ bid }: { bid: BidRange | null }) {
       initial={{ opacity: 0, y: 36 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring" as const, stiffness: 70, damping: 22, delay: 0.25 }}
-      className="my-12 rounded-3xl overflow-hidden relative"
+      className="mt-4 mb-12 print:mt-12 rounded-3xl overflow-hidden relative"
       style={{
-        background: "linear-gradient(145deg, #0f0e0a, #141208, #0f0e0a)",
-        border: "1px solid rgba(201,168,76,0.45)",
+        background: "var(--color-surface-raised)",
+        border: "1px solid rgb(var(--accent-rgb) / 0.45)",
         boxShadow:
-          "0 0 80px rgba(201,168,76,0.06), 0 0 0 1px rgba(201,168,76,0.06) inset",
+          "0 0 80px rgb(var(--accent-rgb) / 0.06), 0 0 0 1px rgb(var(--accent-rgb) / 0.06) inset",
       }}
     >
       {/* Top ambient spotlight */}
@@ -152,14 +152,14 @@ function BidRangeCard({ bid }: { bid: BidRange | null }) {
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[480px] h-[220px] pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse, rgba(201,168,76,0.1) 0%, transparent 65%)",
+            "radial-gradient(ellipse, rgb(var(--accent-rgb) / 0.1) 0%, transparent 65%)",
         }}
       />
 
       {/* ── Card header ── */}
       <div
-        className="relative px-8 pt-8 pb-6 flex flex-col items-center gap-2"
-        style={{ borderBottom: "1px solid rgba(201,168,76,0.15)" }}
+        className="relative px-4 sm:px-8 pt-8 pb-6 flex flex-col items-center gap-2"
+        style={{ borderBottom: "1px solid rgb(var(--accent-rgb) / 0.15)" }}
       >
         {/* Ornament line */}
         <div className="flex items-center gap-4 w-full max-w-xs justify-center">
@@ -167,12 +167,12 @@ function BidRangeCard({ bid }: { bid: BidRange | null }) {
             className="flex-1 h-px"
             style={{
               background:
-                "linear-gradient(90deg, transparent, rgba(201,168,76,0.45))",
+                "linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / 0.45))",
             }}
           />
           <span
-            className="text-[8px] font-sans font-semibold uppercase tracking-[0.3em]"
-            style={{ color: "var(--color-gold)", opacity: 0.65 }}
+            className="text-[11px] font-sans font-semibold uppercase tracking-[0.3em]"
+            style={{ color: "var(--color-gold)", opacity: 0.85 }}
           >
             Acquisition Valuation
           </span>
@@ -180,7 +180,7 @@ function BidRangeCard({ bid }: { bid: BidRange | null }) {
             className="flex-1 h-px"
             style={{
               background:
-                "linear-gradient(-90deg, transparent, rgba(201,168,76,0.45))",
+                "linear-gradient(-90deg, transparent, rgb(var(--accent-rgb) / 0.45))",
             }}
           />
         </div>
@@ -195,7 +195,7 @@ function BidRangeCard({ bid }: { bid: BidRange | null }) {
 
       {/* ── Three panels ── */}
       <motion.div
-        className="grid grid-cols-3"
+        className="grid grid-cols-1 sm:grid-cols-3"
         variants={{
           hidden: {},
           show: {
@@ -209,14 +209,14 @@ function BidRangeCard({ bid }: { bid: BidRange | null }) {
           label="Low Bid"
           value={bid.low ?? null}
           description="Entry threshold"
-          accent="rgba(99,179,237,0.8)"
+          accent="rgb(var(--info-rgb) / 0.8)"
           trend="down"
         />
         <BidPanel
           label="Fair Value"
           value={bid.fair ?? null}
           description="Recommended offer"
-          accent="#c9a84c"
+          accent="var(--color-gold)"
           trend="neutral"
           highlight
         />
@@ -224,7 +224,7 @@ function BidRangeCard({ bid }: { bid: BidRange | null }) {
           label="Walk-Away"
           value={bid.walk_away ? `> ${bid.walk_away}` : null}
           description="Maximum threshold"
-          accent="rgba(248,113,113,0.85)"
+          accent="rgb(var(--danger-rgb) / 0.85)"
           trend="up"
         />
       </motion.div>
@@ -243,20 +243,20 @@ interface Props {
 export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
   return (
     <div>
-      {/* ── Dossier header ── */}
-      <div className="mb-10">
+      {/* ── Dossier header ── print only; on screen the page header already names the film */}
+      <div className="hidden print:block mb-10">
         <div
           className="h-px w-full mb-8"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(201,168,76,0.35) 30%, rgba(201,168,76,0.35) 70%, transparent)",
+              "linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / 0.35) 30%, rgb(var(--accent-rgb) / 0.35) 70%, transparent)",
           }}
         />
         <div className="flex items-start justify-between gap-4">
           <div>
             <p
-              className="text-[9px] font-sans font-semibold uppercase tracking-[0.28em] mb-2"
-              style={{ color: "var(--color-gold)", opacity: 0.65 }}
+              className="text-[11px] font-sans font-semibold uppercase tracking-[0.28em] mb-2"
+              style={{ color: "var(--color-gold)", opacity: 0.85 }}
             >
               Acquisition Analysis Report
             </p>
@@ -271,7 +271,7 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
             </h2>
           </div>
           <p
-            className="text-[11px] font-sans shrink-0 mt-2"
+            className="hidden sm:block text-[11px] font-sans shrink-0 mt-2"
             style={{ color: "var(--color-text-dim)" }}
           >
             AI-powered due diligence
@@ -281,7 +281,7 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
           className="h-px w-full mt-8"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(201,168,76,0.18) 30%, rgba(201,168,76,0.18) 70%, transparent)",
+              "linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / 0.18) 30%, rgb(var(--accent-rgb) / 0.18) 70%, transparent)",
           }}
         />
       </div>
@@ -322,32 +322,24 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
                     className="w-[3px] h-6 rounded-full shrink-0"
                     style={{
                       background:
-                        "linear-gradient(180deg, #c9a84c, rgba(201,168,76,0.3))",
+                        "linear-gradient(180deg, var(--color-gold), rgb(var(--accent-rgb) / 0.3))",
                     }}
                   />
-                  <div>
-                    <p
-                      className="text-[8.5px] font-sans font-semibold uppercase tracking-[0.2em] mb-0.5"
-                      style={{ color: "var(--color-text-dim)" }}
-                    >
-                      Section
-                    </p>
-                    <h2
-                      className="font-display"
-                      style={{
-                        fontSize: "clamp(1.1rem,2vw,1.5rem)",
-                        color: "var(--color-text)",
-                      }}
-                    >
-                      {children}
-                    </h2>
-                  </div>
+                  <h2
+                    className="font-display"
+                    style={{
+                      fontSize: "clamp(1.1rem,2vw,1.5rem)",
+                      color: "var(--color-text)",
+                    }}
+                  >
+                    {children}
+                  </h2>
                 </div>
                 <div
                   className="mt-3 h-px"
                   style={{
                     background:
-                      "linear-gradient(90deg, rgba(201,168,76,0.2), rgba(201,168,76,0.05) 40%, transparent)",
+                      "linear-gradient(90deg, rgb(var(--accent-rgb) / 0.2), rgb(var(--accent-rgb) / 0.05) 40%, transparent)",
                   }}
                 />
               </motion.div>
@@ -362,8 +354,8 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
             ),
             p: ({ children }) => (
               <p
-                className="text-[14.5px] mb-4 leading-[1.8]"
-                style={{ color: "var(--color-text-muted)" }}
+                className="text-[15px] mb-4 leading-[1.8]"
+                style={{ color: "var(--color-text)" }}
               >
                 {children}
               </p>
@@ -386,8 +378,8 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
             ),
             li: ({ children }) => (
               <li
-                className="text-[14px] flex gap-2.5 items-start"
-                style={{ color: "var(--color-text-muted)" }}
+                className="text-[15px] flex gap-2.5 items-start"
+                style={{ color: "var(--color-text)" }}
               >
                 <span
                   className="mt-[9px] shrink-0 w-1 h-1 rounded-full"
@@ -398,7 +390,7 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
             ),
             table: ({ children }) => (
               <div
-                className="my-7 rounded-xl overflow-hidden"
+                className="my-7 rounded-xl overflow-x-auto"
                 style={{ border: "1px solid var(--color-border)" }}
               >
                 <table className="report-table">{children}</table>
@@ -410,7 +402,7 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
               <blockquote
                 className="pl-5 py-1 my-5 italic text-[13.5px]"
                 style={{
-                  borderLeft: "3px solid rgba(201,168,76,0.38)",
+                  borderLeft: "3px solid rgb(var(--accent-rgb) / 0.38)",
                   color: "var(--color-text-muted)",
                 }}
               >
@@ -435,7 +427,7 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
                 style={{
                   color: "var(--color-gold)",
                   textDecoration: "underline",
-                  textDecorationColor: "rgba(201,168,76,0.32)",
+                  textDecorationColor: "rgb(var(--accent-rgb) / 0.32)",
                   textUnderlineOffset: "3px",
                 }}
               >
@@ -446,9 +438,9 @@ export function ReportDisplay({ report, filmTitle, bidRange }: Props) {
               <code
                 className="text-[12px] px-1.5 py-0.5 rounded font-mono"
                 style={{
-                  background: "rgba(201,168,76,0.07)",
+                  background: "rgb(var(--accent-rgb) / 0.07)",
                   color: "var(--color-gold)",
-                  border: "1px solid rgba(201,168,76,0.14)",
+                  border: "1px solid rgb(var(--accent-rgb) / 0.14)",
                 }}
               >
                 {children}

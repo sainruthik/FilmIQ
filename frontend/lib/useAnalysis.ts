@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AGENTS, SPECIALIST_NAMES, STRATEGIST_NAME } from "./agents";
 import { getAnalysisUrl } from "./api";
 
 export type AgentStatus = "waiting" | "running" | "done";
@@ -35,17 +36,7 @@ export interface AnalysisState {
   error: string | null;
 }
 
-export const SPECIALIST_NAMES = [
-  "Document Analyst",
-  "Talent Researcher",
-  "Market Analyst",
-  "Deals Researcher",
-  "Buzz Analyst",
-  "Risk Analyst",
-];
-
-const STRATEGIST_NAME = "Acquisitions Strategist";
-const ALL_AGENT_NAMES = [...SPECIALIST_NAMES, STRATEGIST_NAME];
+const ALL_AGENT_NAMES = AGENTS.map((a) => a.name);
 
 function initAgents(status: AgentStatus = "waiting"): AgentInfo[] {
   return ALL_AGENT_NAMES.map((name) => ({ name, status }));

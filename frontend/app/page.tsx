@@ -3,25 +3,7 @@
 import { motion } from "framer-motion";
 import { NavBar } from "@/components/NavBar";
 import { UploadZone } from "@/components/UploadZone";
-import {
-  FileText,
-  Users,
-  BarChart3,
-  DollarSign,
-  TrendingUp,
-  ShieldAlert,
-  Target,
-} from "lucide-react";
-
-const AGENTS = [
-  { icon: FileText, name: "Document Analyst", desc: "Story · Genre · Budget · Rights", n: "01" },
-  { icon: Users, name: "Talent Researcher", desc: "Director track record · Cast value", n: "02" },
-  { icon: BarChart3, name: "Market Analyst", desc: "Streaming benchmarks · Comparables", n: "03" },
-  { icon: DollarSign, name: "Deals Researcher", desc: "Acquisition deals · Pricing anchors", n: "04" },
-  { icon: TrendingUp, name: "Buzz Analyst", desc: "Festival buzz · Critic sentiment", n: "05" },
-  { icon: ShieldAlert, name: "Risk Analyst", desc: "Red flags · Risk register", n: "06" },
-  { icon: Target, name: "Acquisitions Strategist", desc: "Bid range · Final recommendation", n: "07" },
-];
+import { AGENTS } from "@/lib/agents";
 
 const STEPS = [
   {
@@ -67,34 +49,34 @@ export default function HomePage() {
       <section className="relative min-h-[100dvh] flex items-center pt-14 overflow-hidden">
         {/* Film strip left edge */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-6 opacity-25 pointer-events-none"
+          className="film-strip hidden sm:block absolute left-0 top-0 bottom-0 w-6 opacity-25 pointer-events-none"
           aria-hidden
           style={{
             background:
-              "repeating-linear-gradient(180deg, transparent 0, transparent 14px, rgba(201,168,76,0.45) 14px, rgba(201,168,76,0.45) 20px)",
+              "repeating-linear-gradient(180deg, transparent 0, transparent 14px, rgb(var(--accent-rgb) / 0.45) 14px, rgb(var(--accent-rgb) / 0.45) 20px)",
           }}
         />
         {/* Film strip right edge */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-6 opacity-25 pointer-events-none"
+          className="film-strip hidden sm:block absolute right-0 top-0 bottom-0 w-6 opacity-25 pointer-events-none"
           aria-hidden
           style={{
             background:
-              "repeating-linear-gradient(180deg, transparent 0, transparent 14px, rgba(201,168,76,0.45) 14px, rgba(201,168,76,0.45) 20px)",
+              "repeating-linear-gradient(180deg, transparent 0, transparent 14px, rgb(var(--accent-rgb) / 0.45) 14px, rgb(var(--accent-rgb) / 0.45) 20px)",
           }}
         />
 
         {/* Ambient glow */}
         <div
           className="absolute top-1/4 right-[15%] w-[600px] h-[600px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 68%)" }}
+          style={{ background: "radial-gradient(circle, rgb(var(--accent-rgb) / 0.06) 0%, transparent 68%)" }}
         />
         <div
           className="absolute bottom-0 left-[20%] w-[400px] h-[400px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(201,168,76,0.04) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, rgb(var(--accent-rgb) / 0.04) 0%, transparent 70%)" }}
         />
 
-        <div className="max-w-6xl mx-auto w-full px-10 grid lg:grid-cols-[1fr_1.15fr] gap-16 items-center py-20">
+        <div className="max-w-6xl mx-auto w-full px-4 sm:px-10 grid lg:grid-cols-[1fr_1.15fr] gap-10 lg:gap-16 items-center py-12 sm:py-20">
           {/* LEFT: headline + stats */}
           <motion.div
             className="flex flex-col gap-9"
@@ -105,10 +87,10 @@ export default function HomePage() {
             {/* Badge */}
             <motion.div variants={fromLeft}>
               <span
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-sans font-semibold uppercase tracking-[0.16em]"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-sans font-semibold uppercase tracking-[0.16em]"
                 style={{
-                  background: "rgba(201,168,76,0.07)",
-                  border: "1px solid rgba(201,168,76,0.3)",
+                  background: "rgb(var(--accent-rgb) / 0.07)",
+                  border: "1px solid rgb(var(--accent-rgb) / 0.3)",
                   color: "var(--color-gold)",
                 }}
               >
@@ -140,7 +122,7 @@ export default function HomePage() {
             </motion.p>
 
             {/* Stats row */}
-            <motion.div variants={fromLeft} className="flex items-center gap-7">
+            <motion.div variants={fromLeft} className="grid grid-cols-3 gap-4 sm:flex sm:items-center sm:gap-7">
               {[
                 { val: "7", label: "Specialist Agents" },
                 { val: "<5m", label: "Analysis Time" },
@@ -150,7 +132,7 @@ export default function HomePage() {
                   <div>
                     <p className="font-display text-[2rem] leading-none gold-text">{stat.val}</p>
                     <p
-                      className="text-[9px] font-sans uppercase tracking-[0.14em] mt-1"
+                      className="text-[11px] font-sans uppercase tracking-[0.14em] mt-1"
                       style={{ color: "var(--color-text-dim)" }}
                     >
                       {stat.label}
@@ -158,7 +140,7 @@ export default function HomePage() {
                   </div>
                   {i < 2 && (
                     <div
-                      className="h-8 w-px shrink-0"
+                      className="hidden sm:block h-8 w-px shrink-0"
                       style={{ background: "var(--color-border)" }}
                     />
                   )}
@@ -176,7 +158,7 @@ export default function HomePage() {
 
       {/* ── HOW IT WORKS ── zigzag alternating layout */}
       <section
-        className="py-28 px-10 border-t"
+        className="overflow-x-clip py-20 sm:py-28 px-4 sm:px-10 border-t"
         style={{ borderColor: "var(--color-border)" }}
       >
         <div className="max-w-4xl mx-auto">
@@ -187,7 +169,7 @@ export default function HomePage() {
             transition={{ type: "spring" as const, stiffness: 80, damping: 20 }}
             className="mb-20"
           >
-            <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.22em] text-gold mb-3">
+            <p className="text-[11px] font-sans font-semibold uppercase tracking-[0.22em] text-gold mb-3">
               Process
             </p>
             <h2
@@ -206,14 +188,14 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ type: "spring" as const, stiffness: 75, damping: 20 }}
-                className={`flex items-stretch gap-10 ${i % 2 !== 0 ? "flex-row-reverse" : ""}`}
+                className={`flex flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-10 ${i % 2 !== 0 ? "sm:flex-row-reverse" : ""}`}
               >
                 {/* Number column */}
-                <div className="shrink-0 w-16 flex items-start justify-center pt-3">
+                <div className="shrink-0 sm:w-24 flex items-start sm:justify-center sm:pt-3">
                   <span
                     className="font-display font-bold leading-none select-none"
                     style={{
-                      fontSize: "5.5rem",
+                      fontSize: "clamp(3rem, 8vw, 5rem)",
                       color: "var(--color-gold)",
                       opacity: 0.18,
                     }}
@@ -224,7 +206,7 @@ export default function HomePage() {
 
                 {/* Card */}
                 <div
-                  className="flex-1 rounded-2xl p-8"
+                  className="flex-1 rounded-2xl p-6 sm:p-8"
                   style={{
                     background: "var(--color-card)",
                     border: "1px solid var(--color-border)",
@@ -254,14 +236,14 @@ export default function HomePage() {
         className="py-28 border-t"
         style={{ borderColor: "var(--color-border)" }}
       >
-        <div className="max-w-5xl mx-auto px-10 mb-14">
+        <div className="max-w-5xl mx-auto px-4 sm:px-10 mb-14">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ type: "spring" as const, stiffness: 80, damping: 20 }}
           >
-            <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.22em] text-gold mb-3">
+            <p className="text-[11px] font-sans font-semibold uppercase tracking-[0.22em] text-gold mb-3">
               Specialist Team
             </p>
             <h2
@@ -292,7 +274,7 @@ export default function HomePage() {
           />
 
           <div
-            className="flex gap-4 overflow-x-auto px-10 pb-3"
+            className="flex gap-4 overflow-x-auto px-4 sm:px-10 pb-3"
             style={{ scrollbarWidth: "none" }}
           >
             {AGENTS.map((agent, i) => {
@@ -323,8 +305,8 @@ export default function HomePage() {
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{
-                        background: "rgba(201,168,76,0.07)",
-                        border: "1px solid rgba(201,168,76,0.18)",
+                        background: "rgb(var(--accent-rgb) / 0.07)",
+                        border: "1px solid rgb(var(--accent-rgb) / 0.18)",
                         transition: "all 0.3s ease",
                       }}
                     >
@@ -337,7 +319,7 @@ export default function HomePage() {
                       className="font-display font-bold leading-none select-none"
                       style={{ fontSize: "1.8rem", color: "var(--color-gold)", opacity: 0.14 }}
                     >
-                      {agent.n}
+                      {String(i + 1).padStart(2, "0")}
                     </span>
                   </div>
 
@@ -364,10 +346,10 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer
-        className="py-10 px-10 border-t"
+        className="py-10 px-4 sm:px-10 border-t"
         style={{ borderColor: "var(--color-border)" }}
       >
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <p
             className="text-[11px] font-sans"
             style={{ color: "var(--color-text-dim)" }}
@@ -378,7 +360,7 @@ export default function HomePage() {
             className="text-[11px] font-sans"
             style={{ color: "var(--color-text-dim)" }}
           >
-            Powered by Claude · CrewAI
+            Powered by Claude · LangGraph
           </p>
         </div>
       </footer>

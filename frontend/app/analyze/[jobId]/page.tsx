@@ -6,15 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { NavBar } from "@/components/NavBar";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { ReportDisplay } from "@/components/ReportDisplay";
-import { SPECIALIST_NAMES, useAnalysis } from "@/lib/useAnalysis";
-import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { SPECIALIST_NAMES } from "@/lib/agents";
+import { useAnalysis } from "@/lib/useAnalysis";
+import Link from "next/link";
+import { AlertCircle, Loader2, CheckCircle2, ChevronDown, Download, Plus } from "lucide-react";
 
 function AnalysisContent() {
   const params = useParams<{ jobId: string }>();
   const searchParams = useSearchParams();
-  const filenamesRaw =
-    searchParams.get("filenames") ?? searchParams.get("filename") ?? "film.pdf";
-  const filenames = filenamesRaw.split(",");
+  const filenames = (searchParams.get("filenames") ?? "film.pdf").split(",");
   const filename = filenames[0];
 
   const state = useAnalysis(params.jobId, filename);
@@ -30,33 +30,34 @@ function AnalysisContent() {
 
       {/* ── CINEMATIC HEADER ── */}
       <div
+        className="print:hidden"
         style={{
           borderBottom: "1px solid var(--color-border)",
           background:
-            "linear-gradient(180deg, rgba(201,168,76,0.035) 0%, transparent 100%)",
+            "linear-gradient(180deg, rgb(var(--accent-rgb) / 0.035) 0%, transparent 100%)",
         }}
       >
         {/* Film-strip perforation top */}
         <div
-          className="h-[2px] w-full"
+          className="film-strip h-[2px] w-full"
           style={{
             background:
-              "repeating-linear-gradient(90deg, transparent 0, transparent 11px, rgba(201,168,76,0.22) 11px, rgba(201,168,76,0.22) 15px)",
+              "repeating-linear-gradient(90deg, transparent 0, transparent 11px, rgb(var(--accent-rgb) / 0.22) 11px, rgb(var(--accent-rgb) / 0.22) 15px)",
           }}
         />
 
-        <div className="max-w-5xl mx-auto px-8 py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-10">
           <motion.div
             initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring" as const, stiffness: 90, damping: 22 }}
-            className="flex items-start justify-between gap-6"
+            className="flex flex-col sm:flex-row items-start sm:justify-between gap-4 sm:gap-6"
           >
             {/* Title block */}
             <div className="flex-1 min-w-0">
               <p
-                className="text-[9px] font-sans font-semibold uppercase tracking-[0.26em] mb-3"
-                style={{ color: "var(--color-gold)", opacity: 0.65 }}
+                className="text-[11px] font-sans font-semibold uppercase tracking-[0.26em] mb-3"
+                style={{ color: "var(--color-gold)", opacity: 0.85 }}
               >
                 Acquisition Analysis
               </p>
@@ -94,15 +95,15 @@ function AnalysisContent() {
               className="flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-sans font-semibold shrink-0 mt-1"
               style={{
                 background: isDone
-                  ? "rgba(74,222,128,0.08)"
+                  ? "rgb(var(--success-rgb) / 0.08)"
                   : isError
-                  ? "rgba(248,113,113,0.08)"
-                  : "rgba(201,168,76,0.08)",
+                  ? "rgb(var(--danger-rgb) / 0.08)"
+                  : "rgb(var(--accent-rgb) / 0.08)",
                 border: isDone
-                  ? "1px solid rgba(74,222,128,0.35)"
+                  ? "1px solid rgb(var(--success-rgb) / 0.35)"
                   : isError
-                  ? "1px solid rgba(248,113,113,0.35)"
-                  : "1px solid rgba(201,168,76,0.35)",
+                  ? "1px solid rgb(var(--danger-rgb) / 0.35)"
+                  : "1px solid rgb(var(--accent-rgb) / 0.35)",
                 color: isDone
                   ? "var(--color-success)"
                   : isError
@@ -166,7 +167,7 @@ function AnalysisContent() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="max-w-5xl mx-auto px-8 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
 
         {/* ── Ingesting state ── atmospheric card */}
         <AnimatePresence>
@@ -177,7 +178,7 @@ function AnalysisContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ type: "spring" as const, stiffness: 85, damping: 22 }}
-              className="rounded-2xl p-14 flex flex-col items-center gap-7 text-center mb-8 relative overflow-hidden"
+              className="rounded-2xl p-8 sm:p-14 flex flex-col items-center gap-7 text-center mb-8 relative overflow-hidden"
               style={{
                 background: "var(--color-card)",
                 border: "1px solid var(--color-border)",
@@ -188,7 +189,7 @@ function AnalysisContent() {
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-[360px] h-[180px] pointer-events-none"
                 style={{
                   background:
-                    "radial-gradient(ellipse, rgba(201,168,76,0.09) 0%, transparent 68%)",
+                    "radial-gradient(ellipse, rgb(var(--accent-rgb) / 0.09) 0%, transparent 68%)",
                 }}
               />
 
@@ -196,8 +197,8 @@ function AnalysisContent() {
               <div
                 className="relative w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{
-                  background: "rgba(201,168,76,0.07)",
-                  border: "1px solid rgba(201,168,76,0.22)",
+                  background: "rgb(var(--accent-rgb) / 0.07)",
+                  border: "1px solid rgb(var(--accent-rgb) / 0.22)",
                 }}
               >
                 <motion.div
@@ -232,7 +233,7 @@ function AnalysisContent() {
 
         {/* ── Agent timeline ── */}
         <AnimatePresence>
-          {(state.phase === "crew" || isDone) && (
+          {state.phase === "crew" && (
             <motion.div
               key="timeline"
               initial={{ opacity: 0, y: 22 }}
@@ -241,7 +242,7 @@ function AnalysisContent() {
               className="mb-12"
             >
               <p
-                className="text-[9px] font-sans font-semibold uppercase tracking-[0.2em] mb-5"
+                className="text-[11px] font-sans font-semibold uppercase tracking-[0.2em] mb-5"
                 style={{ color: "var(--color-text-dim)" }}
               >
                 Specialist Team
@@ -250,6 +251,27 @@ function AnalysisContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Once done the team is a footnote: collapse it so the bid range sits above the fold. */}
+        {isDone && (
+          <details className="group print:hidden mb-6">
+            <summary
+              className="inline-flex items-center gap-2 min-h-[44px] cursor-pointer list-none text-[13px] font-sans font-medium [&::-webkit-details-marker]:hidden"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              <CheckCircle2 size={15} style={{ color: "var(--color-success)" }} aria-hidden />
+              All {state.agents.length} specialists complete
+              <ChevronDown
+                size={14}
+                className="transition-transform group-open:rotate-180"
+                aria-hidden
+              />
+            </summary>
+            <div className="mt-4">
+              <AgentTimeline agents={state.agents} />
+            </div>
+          </details>
+        )}
 
         {/* ── Error state ── */}
         <AnimatePresence>
@@ -260,17 +282,17 @@ function AnalysisContent() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ type: "spring" as const, stiffness: 100, damping: 22 }}
-              className="rounded-2xl p-12 flex flex-col items-center gap-6 text-center"
+              className="rounded-2xl p-8 sm:p-12 flex flex-col items-center gap-6 text-center"
               style={{
-                background: "rgba(248,113,113,0.04)",
-                border: "1px solid rgba(248,113,113,0.2)",
+                background: "rgb(var(--danger-rgb) / 0.04)",
+                border: "1px solid rgb(var(--danger-rgb) / 0.2)",
               }}
             >
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center"
                 style={{
-                  background: "rgba(248,113,113,0.09)",
-                  border: "1px solid rgba(248,113,113,0.22)",
+                  background: "rgb(var(--danger-rgb) / 0.09)",
+                  border: "1px solid rgb(var(--danger-rgb) / 0.22)",
                 }}
               >
                 <AlertCircle size={24} style={{ color: "var(--color-error)" }} />
@@ -295,6 +317,25 @@ function AnalysisContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ── Report actions ── */}
+        {isDone && state.report && (
+          <div className="print:hidden mb-4 flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="btn-gold px-5 py-3 sm:py-2.5 rounded-lg text-sm font-sans font-semibold flex items-center justify-center gap-2"
+            >
+              <Download size={16} /> Download PDF
+            </button>
+            <Link
+              href="/"
+              className="btn-ghost px-5 py-3 sm:py-2.5 rounded-lg text-sm font-sans flex items-center justify-center gap-2"
+            >
+              <Plus size={16} /> Analyze another film
+            </Link>
+          </div>
+        )}
 
         {/* ── Report — dramatic reveal ── */}
         <AnimatePresence>

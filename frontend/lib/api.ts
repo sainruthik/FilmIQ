@@ -4,7 +4,6 @@ const TOKEN_KEY = (jobId: string) => `filmiq_token_${jobId}`;
 
 export interface UploadResult {
   job_id: string;
-  filename: string;
   filenames: string[];
   access_token: string;
 }
