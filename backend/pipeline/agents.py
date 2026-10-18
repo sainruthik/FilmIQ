@@ -1,15 +1,32 @@
+import logging
 import random
 import threading
 import time
 from typing import Callable
 
+from langchain.agents.middleware import AgentMiddleware
+
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 # DuckDuckGo throttles aggressively; without this, six agents searching in
 # parallel get rate-limited and their research comes back empty.
 _search_semaphore = threading.Semaphore(settings.web_search_max_concurrency)
 _SEARCH_RETRIES = 3
 _SEARCH_SLOT_WAIT_SECONDS = 60.0
+
+class ModelFailureLogger(AgentMiddleware):
+    """Logs each failed model attempt before re-raising."""
+
+    async def awrap_model_call(self, request, handler):
+        try:
+            return await handler(request)
+        except Exception as exc:
+            name = getattr(request.model, "model_name", getattr(request.model, "model", "?"))
+            logger.warning("Model %s failed: %s: %s", name, type(exc).__name__, str(exc)[:300])
+            raise
+
 
 # key -> (tools, tool-call budget, temperature, role).
 # Web-research agents need several tool calls (one per cast member, one per
@@ -78,26 +95,8 @@ def _middleware(temperature: float) -> list:
     fallback = groq_chat(temperature, max_tokens=4000, timeout=60)
     # Innermost (last), so it sees each attempt; the fallback middleware only
     # re-raises the final error, which hid why OpenAI failed in the first place.
-    log_failures = _ModelFailureLogger()
+    log_failures = ModelFailureLogger()
     return [TodoListMiddleware()] + ([ModelFallbackMiddleware(fallback)] if fallback else []) + [log_failures]
-
-
-def _ModelFailureLogger():
-    import logging
-
-    from langchain.agents.middleware import AgentMiddleware
-
-    logger = logging.getLogger(__name__)
-
-    class ModelFailureLogger(AgentMiddleware):
-        async def awrap_model_call(self, request, handler):
-            try:
-                return await handler(request)
-            except Exception as exc:
-                logger.warning("Model %s failed: %s: %s", getattr(request.model, "model_name", getattr(request.model, "model", "?")), type(exc).__name__, str(exc)[:300])
-                raise
-
-    return ModelFailureLogger()
 
 
 def _build_web_search_run() -> Callable[[str], str]:

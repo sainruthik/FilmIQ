@@ -118,7 +118,7 @@ async def stream_events(job: Job):
                 logger.error("Job timed out waiting for pipeline events")
                 yield {"type": "error", "message": "Analysis timed out. Please try again."}
                 return
-            if event is _END or event.get("type") == "_end":
+            if event is _END:
                 return
             yield event
     finally:

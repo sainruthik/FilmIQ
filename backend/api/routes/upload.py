@@ -2,15 +2,21 @@ import time
 import uuid
 from pathlib import Path
 
-import aiofiles
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from pydantic import BaseModel
 
 from api.auth import create_job_token
 from api.limiter import limiter
-from api.models import UploadResponse
 from config import settings
 
 router = APIRouter()
+
+
+class UploadResponse(BaseModel):
+    job_id: str
+    filenames: list[str]
+    access_token: str
+
 
 _MAX_FILES = 10
 _PDF_MAGIC = b"%PDF-"
@@ -45,7 +51,9 @@ async def _save_pdf(file: UploadFile, dest: Path, filename: str) -> None:
     max_bytes = settings.max_file_size_mb * 1024 * 1024
     size = 0
     first_chunk = True
-    async with aiofiles.open(dest, "wb") as f:
+    # Plain open(): local-disk writes of 1 MB chunks are fast, and Starlette
+    # has already spooled the upload, so async file IO buys nothing.
+    with dest.open("wb") as f:
         while chunk := await file.read(_CHUNK_SIZE):
             if first_chunk:
                 if not chunk.startswith(_PDF_MAGIC):
@@ -60,7 +68,7 @@ async def _save_pdf(file: UploadFile, dest: Path, filename: str) -> None:
                     status_code=413,
                     detail=f"'{filename}' exceeds {settings.max_file_size_mb} MB limit.",
                 )
-            await f.write(chunk)
+            f.write(chunk)
     if first_chunk:
         raise HTTPException(status_code=400, detail=f"'{filename}' is empty.")
 
@@ -92,7 +100,6 @@ async def upload_files(request: Request, files: list[UploadFile] = File(...)):
     access_token = create_job_token(job_id)
     return UploadResponse(
         job_id=job_id,
-        filename=saved_names[0],
         filenames=saved_names,
         access_token=access_token,
     )

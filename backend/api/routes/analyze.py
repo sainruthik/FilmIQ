@@ -1,5 +1,5 @@
 import json
-import re
+import uuid
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -11,10 +11,14 @@ from config import settings
 
 router = APIRouter()
 
-_UUID_RE = re.compile(
-    r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-    re.IGNORECASE,
-)
+def _is_uuid4(value: str) -> bool:
+    """Canonical hyphenated UUID4 only; uuid.UUID alone also accepts braces/urn forms."""
+    try:
+        parsed = uuid.UUID(value)
+    except ValueError:
+        return False
+    return parsed.version == 4 and str(parsed) == value.lower()
+
 
 _SSE_HEADERS = {
     "Cache-Control": "no-cache",
@@ -34,7 +38,7 @@ async def analyze_stream(
     job_id: str,
     token: str = Query(..., description="Access token returned by /upload"),
 ):
-    if not _UUID_RE.match(job_id):
+    if not _is_uuid4(job_id):
         raise HTTPException(status_code=400, detail="Invalid job ID format.")
 
     if not verify_job_token(job_id, token):

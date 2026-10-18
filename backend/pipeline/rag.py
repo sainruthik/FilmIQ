@@ -1,6 +1,6 @@
+from collections import defaultdict
 from typing import Callable
 
-from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 
 from config import settings
@@ -19,6 +19,18 @@ def _format_docs(docs: list) -> str:
     )
 
 
+def _fuse(doc_lists: list[list], weights: list[float], c: int = 60) -> list:
+    """Weighted reciprocal rank fusion (same scoring as langchain's
+    EnsembleRetriever): docs with identical text merge, scores add up."""
+    score: dict[str, float] = defaultdict(float)
+    first: dict[str, object] = {}
+    for docs, weight in zip(doc_lists, weights):
+        for rank, doc in enumerate(docs, start=1):
+            score[doc.page_content] += weight / (rank + c)
+            first.setdefault(doc.page_content, doc)
+    return sorted(first.values(), key=lambda d: score[d.page_content], reverse=True)
+
+
 def build_rag_chain(vector_store, chunks: list) -> Callable[[str], str]:
     # A fixed k=5 gives a single script the same retrieval breadth as a
     # 3-document upload (script + press kit + financials), where content
@@ -30,18 +42,12 @@ def build_rag_chain(vector_store, chunks: list) -> Callable[[str], str]:
     bm25 = BM25Retriever.from_documents(chunks, k=k)
     dense = vector_store.as_retriever(search_kwargs={"k": k})
 
-    retriever = EnsembleRetriever(
-        retrievers=[bm25, dense],
-        weights=[0.4, 0.6],
-        c=60,
-    )
-
     from .llm import chat_with_fallback
 
     llm = chat_with_fallback(settings.openai_worker_model, temperature=0.1, max_tokens=1024, timeout=60)
 
     def invoke(question: str) -> str:
-        docs = retriever.invoke(question)
+        docs = _fuse([bm25.invoke(question), dense.invoke(question)], weights=[0.4, 0.6])
         context = _format_docs(docs)
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},

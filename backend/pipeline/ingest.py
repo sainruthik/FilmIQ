@@ -98,7 +98,3 @@ def delete_collection(job_id: str) -> None:
     client = QdrantClient(url=settings.qdrant_host, api_key=settings.qdrant_api_key)
     client.delete_collection(collection_name(job_id))
 
-
-# Backward-compat alias
-def ingest_pdf(job_id: str, pdf_path: str) -> tuple:
-    return ingest_pdfs(job_id, [pdf_path])

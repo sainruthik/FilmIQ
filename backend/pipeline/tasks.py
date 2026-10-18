@@ -1,14 +1,5 @@
 from pydantic import BaseModel, Field
 
-SPECIALIST_KEYS = [
-    "document_analyst",
-    "talent_researcher",
-    "market_analyst",
-    "deals_researcher",
-    "buzz_analyst",
-    "risk_analyst",
-]
-
 # Appended to every specialist task so the guardrail can't be forgotten when
 # editing an individual spec. Institutional bid decisions shouldn't be built
 # on an invented number.
@@ -71,6 +62,9 @@ _SPECIALIST_SPECS: dict[str, str] = {
         + _ACCURACY_GUARDRAIL
     ),
 }
+
+# Order here is report order.
+SPECIALIST_KEYS = list(_SPECIALIST_SPECS)
 
 
 class BidScenario(BaseModel):
